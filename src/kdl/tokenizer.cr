@@ -1,7 +1,7 @@
 require "big"
 
 module KDL
-  alias ResultValue = String | Int64 | Float64 | BigDecimal | Bool | Nil
+  alias Result = ::String | Int64 | Float64 | BigDecimal | ::Bool | Nil
 
   struct Token
     enum Type
@@ -28,12 +28,12 @@ module KDL
     end
 
     property type : Type
-    property value : ResultValue
+    property value : Result
     property line : Int32
     property column : Int32
-    property meta : Hash(Symbol, String)
+    property meta : Hash(Symbol, ::String)
 
-    def initialize(@type, @value, @line = 1, @column = 1, @meta = {} of Symbol => String)
+    def initialize(@type, @value, @line = 1, @column = 1, @meta = {} of Symbol => ::String)
     end
 
     def ==(other : self)
@@ -100,13 +100,13 @@ module KDL
     ALLOWED_IN_TYPE = [Context::Ident, Context::String, Context::Rawstring, Context::MultiLineComment, Context::Whitespace]
     NOT_ALLOWED_AFTER_TYPE = [Context::SingleLineComment]
 
-    @str : String
+    @str : ::String
     @context : Context?
     @last_token : Token?
     @line_at_start : Int32
     @column_at_start : Int32
 
-    def initialize(str : String, @start : Int = 0)
+    def initialize(str : ::String, @start = 0)
       @str = debom(str)
       @context = nil
       @rawstring_hashes = 0
@@ -482,7 +482,7 @@ module KDL
           t = Tokenizer.new(@str, @index)
           la = t.next_token
           if la && la.type == Token::Type::WS
-            @buffer += la.value.as(String)
+            @buffer += la.value.as(::String)
             @index = t.index
           end
           return token(Token::Type::EQUALS, @buffer)
@@ -490,7 +490,7 @@ module KDL
       end
     end
 
-    private def token(type, value, meta = {} of Symbol => String)
+    private def token(type, value, meta = {} of Symbol => ::String)
       @last_token = Token.new(type, value, @line_at_start, @column_at_start, meta)
     end
 
