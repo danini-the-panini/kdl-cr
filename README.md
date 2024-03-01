@@ -1,6 +1,6 @@
-# kdl
+# KDL
 
-TODO: Write a description here
+This is a Crystal implementation of the [KDL Document Language](https://kdl.dev/)
 
 ## Installation
 
@@ -18,13 +18,9 @@ TODO: Write a description here
 
 ```crystal
 require "kdl"
+
+KDL.parse_document(a_string) #=> KDL::Document
 ```
-
-TODO: Write usage instructions here
-
-## Development
-
-TODO: Write development instructions here
 
 ## Contributing
 
