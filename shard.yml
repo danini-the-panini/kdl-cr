@@ -1,0 +1,9 @@
+name: kdl
+version: 0.1.0
+
+authors:
+  - Danielle Smith <danielle.smith@platform45.com>
+
+crystal: '>= 1.11.2'
+
+license: MIT
