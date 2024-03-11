@@ -1,7 +1,7 @@
 require "big"
 
 module KDL
-  alias Result = ::String | Int64 | Float64 | BigDecimal | ::Bool | Nil
+  alias Result = String | Int64 | Float64 | BigDecimal | Bool | Nil
 
   struct Token
     enum Type
@@ -31,9 +31,9 @@ module KDL
     property value : Result
     property line : Int32
     property column : Int32
-    property meta : Hash(Symbol, ::String)
+    property meta : Hash(Symbol, String)
 
-    def initialize(@type, @value, @line = 1, @column = 1, @meta = {} of Symbol => ::String)
+    def initialize(@type, @value, @line = 1, @column = 1, @meta = {} of Symbol => String)
     end
 
     def ==(other : self)
@@ -100,13 +100,13 @@ module KDL
     ALLOWED_IN_TYPE = [Context::Ident, Context::String, Context::Rawstring, Context::MultiLineComment, Context::Whitespace]
     NOT_ALLOWED_AFTER_TYPE = [Context::SingleLineComment]
 
-    @str : ::String
+    @str : String
     @context : Context?
     @last_token : Token?
     @line_at_start : Int32
     @column_at_start : Int32
 
-    def initialize(str : ::String, @start = 0)
+    def initialize(str : String, @start = 0)
       @str = debom(str)
       @context = nil
       @rawstring_hashes = 0
@@ -160,7 +160,7 @@ module KDL
       if @peeked_tokens.empty?
         @peeked_tokens << read_next_token
       end
-      @peeked_tokens.first
+      @peeked_tokens.first.as(KDL::Token)
     end
 
     def peek_token_after_next
@@ -169,24 +169,18 @@ module KDL
       elsif @peeked_tokens.size == 1
         @peeked_tokens << read_next_token
       end
-      @peeked_tokens[1]
+      @peeked_tokens[1].as(KDL::Token)
     end
 
     def next_token
       if @peeked_tokens.empty?
         read_next_token
       else
-        @peeked_tokens.shift
+        @peeked_tokens.shift.as(KDL::Token)
       end
     end
 
     def read_next_token
-      token = parse_next_token
-      @last_token = token if token && token.type != Token::Type::NONE
-      token
-    end
-
-    def parse_next_token
       @context = nil
       @previous_context = nil
       @line_at_start = @line
@@ -328,7 +322,7 @@ module KDL
             @type_context = false
             return token(Token::Type::RPAREN, c.to_s).tap { traverse 1 }
           when nil
-            return nil if done?
+            return token(Token::Type::NONE, "") if done?
 
             @done = true
             return token(Token::Type::EOF, "")
@@ -482,7 +476,7 @@ module KDL
           t = Tokenizer.new(@str, @index)
           la = t.next_token
           if la && la.type == Token::Type::WS
-            @buffer += la.value.as(::String)
+            @buffer += la.value.as(String)
             @index = t.index
           end
           return token(Token::Type::EQUALS, @buffer)
@@ -490,8 +484,10 @@ module KDL
       end
     end
 
-    private def token(type, value, meta = {} of Symbol => ::String)
-      @last_token = Token.new(type, value, @line_at_start, @column_at_start, meta)
+    private def token(type, value, meta = {} of Symbol => String)
+      token = Token.new(type, value, @line_at_start, @column_at_start, meta)
+      @last_token = token unless type == Token::Type::NONE
+      token
     end
 
     private def traverse(n = 1)
@@ -546,13 +542,19 @@ module KDL
       s = munch_underscores(s)
 
       decimals = fraction.nil? ? 0 : fraction.size
-      value = Float64.new(s)
-      scientific = value.abs >= 100 || (exponent && exponent.to_i.abs >= 2)
-      if value.infinite? || (value.zero? && exponent && exponent.to_i < 0)
+      value = try_parse_float(s)
+      if value.nil?
         token(Token::Type::DECIMAL, BigDecimal.new(s))
       else
+        scientific = value.abs >= 100 || (exponent && exponent.to_i.abs >= 2)
         token(Token::Type::FLOAT, value, { :format => scientific ? "%.#{decimals}E" : nil }.compact)
       end
+    end
+
+    private def try_parse_float(s)
+      Float64.new(s)
+    rescue ArgumentError
+      nil
     end
 
     private def parse_hexadecimal(s)
@@ -568,7 +570,7 @@ module KDL
     end
 
     private def munch_underscores(s)
-      s.chomp('_').squeeze('_')
+      s.gsub(/_+/, "")
     end
 
     private def convert_escapes(string)
