@@ -149,10 +149,10 @@ describe KDL::Parser do
 
   it "parses raw string" do
     parser.parse(%(node #"foo"#)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo")])])
-    parser.parse(%(node #"foo\nbar"#)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new(%(foo\nbar))])])
+    parser.parse(%(node #"foo\\nbar"#)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo\\nbar")])])
     parser.parse(%(node #"foo"#)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo")])])
     parser.parse(%(node ##"foo"##)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo")])])
-    parser.parse(%(node #"\nfoo\r"#)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new(%(\nfoo\r))])])
+    parser.parse(%(node #"\\nfoo\\r"#)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("\\nfoo\\r")])])
     expect_raises(Exception) { parser.parse(%(node ##"foo"#)) }
   end
 
@@ -328,7 +328,7 @@ describe KDL::Parser do
     bignum 1_000_000
     KDL
     nodes = KDL::Document.new([
-      KDL::Node.new("num", arguments: [KDL::Value.new(BigDecimal.new("1.234e-42"))]),
+      KDL::Node.new("num", arguments: [KDL::Value.new(1.234e-42)]),
       KDL::Node.new("my-hex", arguments: [KDL::Value.new(0xdeadbeef)]),
       KDL::Node.new("my-octal", arguments: [KDL::Value.new(493i64)]),
       KDL::Node.new("my-binary", arguments: [KDL::Value.new(173i64)]),
@@ -410,8 +410,8 @@ describe KDL::Parser do
     - 1
     KDL
     nodes = KDL::Document.new([
-      KDL::Node.new(%("!@$@$%Q$%~@!40), arguments: [KDL::Value.new("1.2.3")], properties: { "!!!!!" => KDL::Value.new(true) }),
-      KDL::Node.new(%("foo123~!@$%^&*.:'|?+), arguments: [KDL::Value.new("weeee")]),
+      KDL::Node.new(%(!@$@$%Q$%~@!40), arguments: [KDL::Value.new("1.2.3")], properties: { "!!!!!" => KDL::Value.new(true) }),
+      KDL::Node.new(%(foo123~!@$%^&*.:'|?+), arguments: [KDL::Value.new("weeee")]),
       KDL::Node.new("-", arguments: [KDL::Value.new(1i64)])
     ])
     doc.should eq nodes

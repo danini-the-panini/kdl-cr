@@ -23,8 +23,15 @@ describe KDL::Tokenizer do
 
     it "tokenizes string" do
       KDL::Tokenizer.new(%("foo")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "foo"))
+      KDL::Tokenizer.new(%("foo\\nbar")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "foo\nbar"))
+      KDL::Tokenizer.new(%("\\u{10FFF}")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "\u{10FFF}"))
+    end
+
+    it "tokenizes multiline string" do
       KDL::Tokenizer.new(%("foo\nbar")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "foo\nbar"))
-      KDL::Tokenizer.new(%("\u{10FFF}")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "\u{10FFF}"))
+      KDL::Tokenizer.new(%("\n  foo\n  bar\n  ")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "foo\nbar"))
+      KDL::Tokenizer.new(%(#"foo\nbar"#)).next_token.should eq(KDL::Token.new(KDL::Token::Type::RAWSTRING, "foo\nbar"))
+      KDL::Tokenizer.new(%(#"\n  foo\n  bar\n  "#)).next_token.should eq(KDL::Token.new(KDL::Token::Type::RAWSTRING, "foo\nbar"))
     end
 
     it "tokenizes rawstring" do
@@ -46,10 +53,15 @@ describe KDL::Tokenizer do
 
     it "tokenizes integer" do
       KDL::Tokenizer.new("123").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 123_i64))
+      KDL::Tokenizer.new("0x0123456789abcdef").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0x0123456789abcdef))
+      KDL::Tokenizer.new("0x0123456789ABCDEF").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0x0123456789ABCDEF))
+      KDL::Tokenizer.new("0o01234567").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0o01234567i64))
+      KDL::Tokenizer.new("0b010101").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0b010101i64))
     end
   
     it "tokenizes float" do
       KDL::Tokenizer.new("1.23").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, 1.23))
+      KDL::Tokenizer.new("-1.0").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, -1.0))
       KDL::Tokenizer.new("#inf").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, Float64::INFINITY))
       KDL::Tokenizer.new("#-inf").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, -Float64::INFINITY))
       nan = KDL::Tokenizer.new("#nan").next_token.as(KDL::Token)

@@ -192,7 +192,7 @@ module KDL
           case c
           when '"'
             @buffer = ""
-            if self[@index + 1] == "\n"
+            if self[@index + 1] == '\n'
               self.context = Context::MultiLineString
               traverse 2
             else
@@ -204,7 +204,7 @@ module KDL
             when '"'
               @rawstring_hashes = 1
               @buffer = ""
-              if self[@index + 2] == "\n"
+              if self[@index + 2] == '\n'
                 self.context = Context::MultiLineRawstring
                 traverse 3
               else
@@ -236,7 +236,7 @@ module KDL
             traverse 1
           when '-'
             n = self[@index + 1]
-            self.context = if n =~ /[0-9]/
+            self.context = if !n.nil? && ('0'..'9').includes?(n)
               Context::Decimal
             else
               Context::Ident
@@ -245,7 +245,7 @@ module KDL
             traverse 1
           when ->(c : Char?) { /[0-9+]/ === c.to_s }
             n = self[@index + 1]
-            if c == '0' && n =~ /[box]/
+            if c == '0' && n.to_s =~ /[box]/
               traverse 2
               @buffer = ""
               self.context = case n
@@ -279,11 +279,10 @@ module KDL
           when '\r'
             n = self[@index + 1]
             token = if n == "\n"
-              token(Token::Type::NEWLINE, "#{c}#{n}")
+              token(Token::Type::NEWLINE, "#{c}#{n}").tap { traverse 2 }
             else
-              token(Token::Type::NEWLINE, c.to_s)
+              token(Token::Type::NEWLINE, c.to_s).tap { traverse 1 }
             end
-            traverse 2
             new_line
             return token
           when ->(c : Char?) { NEWLINES.includes?(c) }
@@ -398,7 +397,11 @@ module KDL
             traverse 1
             @buffer += c.to_s
           else
-            return parse_decimal(@buffer)
+            if c.nil? || WHITESPACE.includes?(c) || NEWLINES.includes?(c)
+              return parse_decimal(@buffer)
+            else
+              raise_error "Unexpected '#{c}'"
+            end
           end
         when Context::Hexadecimal
           case c.to_s
@@ -425,7 +428,7 @@ module KDL
             return parse_binary(@buffer)
           end
         when Context::SingleLineComment
-          if NEWLINES.includes?(c) || c == "\r"
+          if NEWLINES.includes?(c) || c == '\r'
             self.context = nil
             @column_at_start = @column
             next
@@ -532,7 +535,7 @@ module KDL
     end
 
     private def parse_float(s)
-      m = s.match(/^([-+]?[\d_]+)(?:\.([\d_]+))?(?:[eE]([-+]?[\d_]+))?$/)
+      m = s.match(/^([-+]?[\d_]+)(?:\.(\d[\d_]*))?(?:[eE]([-+]?[\d_]+))?$/)
       raise_error "Invalid floating point value #{s}" if m.nil?
 
       match = m[0]?
@@ -558,14 +561,20 @@ module KDL
     end
 
     private def parse_hexadecimal(s)
+      raise_error "Invalid hexadecimal value #{s}" unless /^[a-zA-Z0-9][a-zA-Z0-9_]*$/ =~ s
+
       token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 16))
     end
 
     private def parse_octal(s)
+      raise_error "Invalid octal value #{s}" unless /^[0-7][0-7_]*$/ =~ s
+ 
       token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 8))
     end
 
     private def parse_binary(s)
+      raise_error "Invalid binary value #{s}" unless /^[01][01_]*$/ =~ s
+
       token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 2))
     end
 
@@ -612,7 +621,7 @@ module KDL
       end
 
       lines[lines.size - 1] = lines.last.chomp
-      lines.map { |line| line.gsub(/\A#{indent}/, "") }.join
+      lines.map { |line| line.gsub(/\A#{indent}/, "") }.join("\n")
     end
 
     private def debom(str)
