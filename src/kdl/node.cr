@@ -9,6 +9,124 @@ module KDL
     def initialize(@name : String, *, @arguments = [] of KDL::Value, @properties = {} of String => KDL::Value, @children = [] of Node, @type : String? = nil)
     end
 
+    def [](index : Int) : Value::Type
+      arguments[index].value
+    end
+
+    def [](key : String) : Value::Type
+      properties[key].value
+    end
+
+    def [](key : Symbol) : Value::Type
+      self[key.to_s]
+    end
+
+    def []?(index : Int) : Value::Type?
+      if v = arguments[index]?
+        v.value
+      else
+        nil
+      end
+    end
+
+    def []?(key : String) : Value::Type?
+      if v = properties[key]?
+        v.value
+      else
+        nil
+      end
+    end
+
+    def []?(key : Symbol) : Value::Type?
+      self[key.to_s]?
+    end
+
+    def child(index : Int) : Node
+      children[index]
+    end
+
+    def child(key : String) : Node
+      children.find! { |n| n.name == key }
+    end
+
+    def child(key : Symbol) : Node
+      child(key.to_s)
+    end
+
+    def child?(index : Int) : Node?
+      children[index]?
+    end
+
+    def child?(key : String) : Node?
+      children.find { |n| n.name == key }
+    end
+
+    def child?(key : Symbol) : Node?
+      child?(key.to_s)
+    end
+
+    def arg : Value::Type
+      arguments.first.value
+    end
+
+    def arg(key) : Value::Type
+      child(key).arg
+    end
+
+    def arg? : Value::Type?
+      if a = arguments.first?
+        a.value
+      else
+        nil
+      end
+    end
+
+    def arg?(key) : Value::Type?
+      if n = child?(key)
+        n.arg?
+      else
+        nil
+      end
+    end
+
+    def args : Array(Value::Type)
+      arguments.map(&.value)
+    end
+
+    def args(key) : Array(Value::Type)
+      child(key).args
+    end
+
+    def args?(key) : Array(Value::Type)?
+      if n = child?(key)
+        n.args
+      else
+        nil
+      end
+    end
+
+    def dash_nodes
+      children.select { |n| n.name == "-" }
+    end
+
+    def dash_vals : Array(Value::Type)
+      dash_nodes.map(&.arg)
+    end
+
+    def dash_vals? : Array(Value::Type?)
+      dash_nodes.map(&.arg?)
+    end
+
+    def dash_vals(key) : Array(Value::Type)
+      child(key).dash_vals
+    end
+
+    def dash_vals?(key) : Array(Value::Type)?
+      if n = child?(key)
+        n.dash_vals?
+      end
+    end
+
     def ==(other : KDL::Node)
       name == other.name &&
       arguments == other.arguments &&

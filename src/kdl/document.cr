@@ -7,6 +7,54 @@ module KDL
     def initialize(@nodes = [] of Node)
     end
 
+    def [](index : Int)
+      nodes[index]
+    end
+
+    def [](key : String)
+      nodes.find! { |n| n.name == key }
+    end
+
+    def [](key : Symbol)
+      self[key.to_s]
+    end
+
+    def []?(index : Int)
+      nodes[index]?
+    end
+
+    def []?(key : String)
+      nodes.find { |n| n.name == key }
+    end
+
+    def []?(key : Symbol)
+      self[key.to_s]?
+    end
+
+    def arg(key) : Value::Type
+      self[key].arg
+    end
+
+    def arg?(key) : Value::Type?
+      if n = self[key]?
+        n.arg?
+      else
+        nil
+      end
+    end
+
+    def dash_vals(key) : Array(Value::Type)
+      self[key].dash_vals
+    end
+
+    def dash_vals?(key) : Array(Value::Type)?
+      if n = self[key]?
+        n.dash_vals?
+      else
+        nil
+      end
+    end
+
     def ==(other : KDL::Document)
       nodes == other.nodes
     end
