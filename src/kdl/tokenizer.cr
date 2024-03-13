@@ -1,8 +1,6 @@
 require "big"
 
 module KDL
-  alias Result = String | Int64 | Float64 | BigDecimal | Bool | Nil
-
   struct Token
     enum Type
       IDENT
@@ -28,7 +26,7 @@ module KDL
     end
 
     property type : Type
-    property value : Result
+    property value : KDL::Value::Type
     property line : Int32
     property column : Int32
     property meta : Hash(Symbol, String)
@@ -234,7 +232,7 @@ module KDL
             self.context = Context::Keyword
             @buffer = c.to_s
             traverse 1
-          when '-'
+          when '-', '+'
             n = self[@index + 1]
             self.context = if !n.nil? && ('0'..'9').includes?(n)
               Context::Decimal
@@ -243,7 +241,7 @@ module KDL
             end
             @buffer = c.to_s
             traverse 1
-          when ->(c : Char?) { /[0-9+]/ === c.to_s }
+          when ->(c : Char?) { /[0-9]/ === c.to_s }
             n = self[@index + 1]
             if c == '0' && n.to_s =~ /[box]/
               traverse 2
@@ -404,24 +402,21 @@ module KDL
             end
           end
         when Context::Hexadecimal
-          case c.to_s
-          when /[0-9a-fA-F_]/
+          if !c.nil? && !WHITESPACE.includes?(c) && !NEWLINES.includes?(c)
             traverse 1
             @buffer += c.to_s
           else
             return parse_hexadecimal(@buffer)
           end
         when Context::Octal
-          case c.to_s
-          when /[0-7_]/
+          if !c.nil? && !WHITESPACE.includes?(c) && !NEWLINES.includes?(c)
             traverse 1
             @buffer += c.to_s
           else
             return parse_octal(@buffer)
           end
         when Context::Binary
-          case c.to_s
-          when /[01_]/
+          if !c.nil? && !WHITESPACE.includes?(c) && !NEWLINES.includes?(c)
             traverse 1
             @buffer += c.to_s
           else
@@ -543,13 +538,14 @@ module KDL
       exponent = m[3]?
 
       s = munch_underscores(s)
+      exponent = munch_underscores(exponent) if exponent
 
       decimals = fraction.nil? ? 0 : fraction.size
       value = try_parse_float(s)
-      if value.nil?
+      scientific = value ? value.abs >= 100 || (exponent && exponent.to_i.abs >= 2) : false
+      if value.nil? || value.infinite? || value.nan? || (value.zero? && scientific)
         token(Token::Type::DECIMAL, BigDecimal.new(s))
       else
-        scientific = value.abs >= 100 || (exponent && exponent.to_i.abs >= 2)
         token(Token::Type::FLOAT, value, { :format => scientific ? "%.#{decimals}E" : nil }.compact)
       end
     end
@@ -563,19 +559,25 @@ module KDL
     private def parse_hexadecimal(s)
       raise_error "Invalid hexadecimal value #{s}" unless /^[a-zA-Z0-9][a-zA-Z0-9_]*$/ =~ s
 
-      token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 16))
+      token(Token::Type::INTEGER, parse_int(munch_underscores(s), 16))
     end
 
     private def parse_octal(s)
       raise_error "Invalid octal value #{s}" unless /^[0-7][0-7_]*$/ =~ s
  
-      token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 8))
+      token(Token::Type::INTEGER, parse_int(munch_underscores(s), 8))
     end
 
     private def parse_binary(s)
       raise_error "Invalid binary value #{s}" unless /^[01][01_]*$/ =~ s
 
-      token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 2))
+      token(Token::Type::INTEGER, parse_int(munch_underscores(s), 2))
+    end
+
+    private def parse_int(s : String, base : Int)
+      s.to_i64(base)
+    rescue ArgumentError
+      s.to_big_i(base)
     end
 
     private def munch_underscores(s)
@@ -593,7 +595,7 @@ module KDL
         when "\\b"    then "\b"
         when "\\f"    then "\f"
         when "\\s"    then ' '
-        when /\\a\s+/ then ""
+        when /\\\s+/ then ""
         else raise_error "Unexpected escape #{m.inspect}"
         end
       end.gsub(/\\u\{[0-9a-fA-F]{0,6}\}/) do |m|
@@ -606,18 +608,20 @@ module KDL
     end
 
     private def unindent(string)
-      lines = string.lines
+      lines = string.split("\n")
       if lines.last.ends_with?("\n")
         indent = ""
       else
         *lines, indent = lines
       end
 
-      if !indent.empty? && indent.each_char.any? { |c| !WHITESPACE.includes?(c) }
-        raise_error "Invalid MultiLine string final line"
-      end
-      if lines.any? { |line| !line.starts_with?(indent) }
-        raise_error "Invalid MultiLine string indentation"
+      unless indent.empty?
+        if indent.each_char.any? { |c| !WHITESPACE.includes?(c) }
+          raise_error "Invalid MultiLine string final line"
+        end
+        if lines.any? { |line| !line.starts_with?(indent) }
+          raise_error "Invalid MultiLine string indentation"
+        end
       end
 
       lines[lines.size - 1] = lines.last.chomp

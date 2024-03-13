@@ -2,19 +2,31 @@ require "./node"
 
 module KDL
   class Document
-    property children
+    property nodes
 
-    def initialize(@children = [] of Node)
+    def initialize(@nodes = [] of Node)
     end
 
     def ==(other : KDL::Document)
-      children == other.children
+      nodes == other.nodes
     end
 
     def ==(other)
-      children == other
+      nodes == other
     end
 
-    def_hash children
+    def_hash nodes
+
+    def to_s(io : IO) : Nil
+      if @nodes.empty?
+        io << "\n"
+        return
+      end
+
+      @nodes.each do |node|
+        node.to_s(io)
+        io << "\n"
+      end
+    end
   end
 end

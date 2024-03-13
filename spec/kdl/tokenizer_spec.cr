@@ -62,6 +62,8 @@ describe KDL::Tokenizer do
     it "tokenizes float" do
       KDL::Tokenizer.new("1.23").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, 1.23))
       KDL::Tokenizer.new("-1.0").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, -1.0))
+      KDL::Tokenizer.new("1.0e1000").next_token.should eq(KDL::Token.new(KDL::Token::Type::DECIMAL, BigDecimal.new("1.0e1000")))
+      KDL::Tokenizer.new("1.0e-1000").next_token.should eq(KDL::Token.new(KDL::Token::Type::DECIMAL, BigDecimal.new("1.0e-1000")))
       KDL::Tokenizer.new("#inf").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, Float64::INFINITY))
       KDL::Tokenizer.new("#-inf").next_token.should eq(KDL::Token.new(KDL::Token::Type::FLOAT, -Float64::INFINITY))
       nan = KDL::Tokenizer.new("#nan").next_token.as(KDL::Token)

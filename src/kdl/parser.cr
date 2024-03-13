@@ -55,13 +55,13 @@ module KDL
 
       node.type = type
 
-      case @tokenizer.peek_token.type
+      case t = @tokenizer.peek_token.type
       when KDL::Token::Type::WS, KDL::Token::Type::LBRACE
         args_props_children(node)
       when KDL::Token::Type::SEMICOLON
         @tokenizer.next_token
-      when KDL::Token::Type::LPAREN
-        raise "Unexpected ("
+      when KDL::Token::Type::LPAREN, KDL::Token::Type::IDENT
+        raise "Unexpected #{t}"
       end
 
       return {true, nil} if commented
@@ -176,7 +176,7 @@ module KDL
         KDL::Token::Type::FALSE,
         KDL::Token::Type::NULL
 
-        return KDL::Value.new(t.value, type: type)
+        return KDL::Value.new(t.value, type: type, format: t.meta[:format]?)
       else
         raise "Expected value, got #{t.type}"
       end
