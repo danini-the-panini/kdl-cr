@@ -221,10 +221,10 @@ module KDL
                 @buffer = ""
                 if self[i + 1] == "\n"
                   self.context = Context::MultiLineRawstring
-                  @index = i + 2
+                  @index = i + 2 # TODO: traverse and newline
                 else
                   self.context = Context::Rawstring
-                  @index = i + 1
+                  @index = i + 1 # TODO: traverse
                 end
                 next
               end
@@ -364,9 +364,8 @@ module KDL
             @buffer += self[@index + 1] || ""
             traverse 2
           when '"'
-            string = convert_escapes(@buffer)
-            string = @context == Context::MultiLineString ? unindent(string) : string
-            return token(Token::Type::STRING, string).tap { traverse 1 }
+            string = @context == Context::MultiLineString ? unindent(@buffer) : @buffer
+            return token(Token::Type::STRING, convert_escapes(string)).tap { traverse 1 }
           when nil
             raise_error "Unterminated string literal"
           else
