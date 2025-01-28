@@ -9,7 +9,7 @@ This is a Crystal implementation of the [KDL Document Language](https://kdl.dev/
    ```yaml
    dependencies:
      kdl:
-       github: your-github-user/kdl-cr
+       github: danini-the-panini/kdl-cr
    ```
 
 2. Run `shards install`
@@ -24,7 +24,7 @@ KDL.parse_document(a_string) #=> KDL::Document
 
 ## Contributing
 
-1. Fork it (<https://github.com/your-github-user/kdl-cr/fork>)
+1. Fork it (<https://github.com/danini-the-panini/kdl-cr/fork>)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
@@ -32,4 +32,4 @@ KDL.parse_document(a_string) #=> KDL::Document
 
 ## Contributors
 
-- [Danielle Smith](https://github.com/your-github-user) - creator and maintainer
+- [Danielle Smith](https://github.com/danini-the-panini) - creator and maintainer
