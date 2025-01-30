@@ -27,13 +27,6 @@ describe KDL::Tokenizer do
       KDL::Tokenizer.new(%("\\u{10FFF}")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "\u{10FFF}"))
     end
 
-    it "tokenizes multiline string" do
-      KDL::Tokenizer.new(%("foo\nbar")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "foo\nbar"))
-      KDL::Tokenizer.new(%("\n  foo\n  bar\n  ")).next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "foo\nbar"))
-      KDL::Tokenizer.new(%(#"foo\nbar"#)).next_token.should eq(KDL::Token.new(KDL::Token::Type::RAWSTRING, "foo\nbar"))
-      KDL::Tokenizer.new(%(#"\n  foo\n  bar\n  "#)).next_token.should eq(KDL::Token.new(KDL::Token::Type::RAWSTRING, "foo\nbar"))
-    end
-
     it "tokenizes rawstring" do
       KDL::Tokenizer.new(%(#"foo\\nbar"#)).next_token.should eq(KDL::Token.new(KDL::Token::Type::RAWSTRING, "foo\\nbar"))
       KDL::Tokenizer.new(%(#"foo"bar"#)).next_token.should eq(KDL::Token.new(KDL::Token::Type::RAWSTRING, "foo\"bar"))
@@ -91,9 +84,6 @@ describe KDL::Tokenizer do
       KDL::Tokenizer.new("= ").next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "= "))
       KDL::Tokenizer.new(" = ").next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, " = "))
       KDL::Tokenizer.new(" =foo").next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, " ="))
-      KDL::Tokenizer.new("\uFE66").next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "\uFE66"))
-      KDL::Tokenizer.new("\uFF1D").next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "\uFF1D"))
-      KDL::Tokenizer.new("🟰").next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "🟰"))
     end
   
     it "tokenizes whitespace" do
@@ -125,7 +115,6 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "="))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 3_i64))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NONE, ""))
     end
   
     it "tokenizes single_line_comment" do
@@ -142,7 +131,6 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NEWLINE, "\n"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "node2"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NONE, ""))
     end
   
     it "tokenizes multiline_comment" do
@@ -154,7 +142,6 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "="))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 2_i64))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NONE, ""))
     end
   
     it "tokenizes utf8" do
@@ -166,7 +153,7 @@ describe KDL::Tokenizer do
   
       tokenizer = KDL::Tokenizer.new <<-KDL.strip
       smile "😁"
-      ノード お名前＝"☜(ﾟヮﾟ☜)"
+      ノード お名前="☜(ﾟヮﾟ☜)"
       KDL
   
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "smile"))
@@ -176,10 +163,9 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "ノード"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "お名前"))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "＝"))
+      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "="))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "☜(ﾟヮﾟ☜)"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NONE, ""))
     end
   
     it "tokenizes semicolon" do
@@ -190,7 +176,6 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "node2"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NONE, ""))
     end
   
     it "tokenizes slash_dash" do
@@ -219,7 +204,6 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NEWLINE, "\n"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::RBRACE, "}"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NONE, ""))
     end
   
     it "tokenizes multiline_nodes" do
@@ -232,7 +216,6 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " \\\n  "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "Some title"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::NONE, ""))
     end
   
     it "tokenizes types" do

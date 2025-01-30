@@ -12,7 +12,8 @@ module KDL
     end
 
     def as_type(type : String?)
-      self.class.new(@value, type: type)
+      self.type = type
+      self
     end
 
     # Checks that the underlying value is `Nil`, and returns `nil`.

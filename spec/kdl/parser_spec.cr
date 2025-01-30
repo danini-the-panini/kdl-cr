@@ -71,13 +71,14 @@ describe KDL::Parser do
   it "parses children slashdash comment" do
     parser.parse("node /-{}").should eq KDL::Document.new([KDL::Node.new("node")])
     parser.parse("node /- {}").should eq KDL::Document.new([KDL::Node.new("node")])
-    parser.parse("node /-{\nnode2\n}").should eq KDL::Document.new([KDL::Node.new("node")])
+    parser.parse("node {\n  /-node2\n}").should eq KDL::Document.new([KDL::Node.new("node")])
+    parser.parse("node /-{\n  node2\n}").should eq KDL::Document.new([KDL::Node.new("node")])
   end
 
   it "parses string" do
     parser.parse(%(node "")).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("")] of KDL::Value)])
     parser.parse(%(node "hello")).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("hello")] of KDL::Value)])
-    parser.parse(%(node "hello\nworld")).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("hello\nworld")] of KDL::Value)])
+    parser.parse(%(node "hello\\nworld")).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("hello\nworld")] of KDL::Value)])
     parser.parse(%(node -flag)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("-flag")] of KDL::Value)])
     parser.parse(%(node --flagg)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("--flagg")] of KDL::Value)])
     parser.parse(%(node "\\u{10FFF}")).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("\u{10FFF}")] of KDL::Value)])
@@ -85,13 +86,14 @@ describe KDL::Parser do
     parser.parse(%(node "\\u{10}")).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("\u{10}")] of KDL::Value)])
     expect_raises(Exception) { parser.parse(%(node "\\i")) }
     expect_raises(Exception) { parser.parse(%(node "\\u{c0ffee}")) }
+    expect_raises(Exception) { parser.parse(%(node "oops)) }
   end
 
   it "parses unindented multiline strings" do
-    parser.parse("node \"\n  foo\n  bar\n    baz\n  qux\n  \"").should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo\nbar\n  baz\nqux")] of KDL::Value)])
-    parser.parse("node #\"\n  foo\n  bar\n    baz\n  qux\n  \"#").should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo\nbar\n  baz\nqux")] of KDL::Value)])
-    expect_raises(Exception) { parser.parse("node \"\n    foo\n  bar\n    baz\n    \"") }
-    expect_raises(Exception) { parser.parse("node #\"\n    foo\n  bar\n    baz\n    \"#") }
+    parser.parse(%(node """\n  foo\n  bar\n    baz\n  qux\n  """)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo\nbar\n  baz\nqux")] of KDL::Value)])
+    parser.parse(%(node #"""\n  foo\n  bar\n    baz\n  qux\n  """#)).should eq KDL::Document.new([KDL::Node.new("node", arguments: [KDL::Value.new("foo\nbar\n  baz\nqux")] of KDL::Value)])
+    expect_raises(Exception) { parser.parse(%(node """\n    foo\n  bar\n    baz\n    """)) }
+    expect_raises(Exception) { parser.parse(%(node #"""\n    foo\n  bar\n    baz\n    """#)) }
   end
 
   it "parses float" do
@@ -309,9 +311,11 @@ describe KDL::Parser do
 
   it "parses multiline strings" do
     doc = parser.parse <<-KDL.strip
-    string "my
+    string """
+    my
     multiline
-    value"
+    value
+    """
     KDL
     nodes = KDL::Document.new([
       KDL::Node.new("string", arguments: [KDL::Value.new("my\nmultiline\nvalue")])
@@ -394,7 +398,7 @@ describe KDL::Parser do
   it "parses utf8" do
     doc = parser.parse <<-KDL.strip
     smile "😁"
-    ノード お名前＝"☜(ﾟヮﾟ☜)"
+    ノード お名前="☜(ﾟヮﾟ☜)"
     KDL
     nodes = KDL::Document.new([
       KDL::Node.new("smile", arguments: [KDL::Value.new("😁")]),

@@ -65,6 +65,10 @@ module KDL
       child?(key.to_s)
     end
 
+    def children?
+      !children.empty?
+    end
+
     def arg : Value::Type
       arguments.first.value
     end
@@ -125,6 +129,11 @@ module KDL
       if n = child?(key)
         n.dash_vals?
       end
+    end
+
+    def as_type(type)
+      self.type = type
+      self
     end
 
     def ==(other : KDL::Node)
