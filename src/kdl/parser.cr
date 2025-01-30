@@ -5,6 +5,12 @@ require "./value"
 
 module KDL
   class Parser
+    class Error < Exception
+      def initialize(message, line, column)
+        super("#{message} (#{line}:#{column})")
+      end
+    end
+
     def initialize
       @tokenizer = KDL::Tokenizer.new("")
       @depth = 0
@@ -36,10 +42,8 @@ module KDL
       linespace_star
 
       commented = false
-
       if @tokenizer.peek_token.type == KDL::Token::Type::SLASHDASH
-        @tokenizer.next_token
-        ws_star
+        parse_slashdash
         commented = true
       end
 
@@ -49,22 +53,17 @@ module KDL
         type = parse_type
         node = KDL::Node.new(identifier)
       rescue error
-        raise error unless type.nil?
+        raise_error error unless type.nil?
         return {false, nil}
       end
 
-      node.type = type
-
-      case t = @tokenizer.peek_token.type
-      when KDL::Token::Type::WS, KDL::Token::Type::LBRACE
-        args_props_children(node)
-      when KDL::Token::Type::SEMICOLON
-        @tokenizer.next_token
-      when KDL::Token::Type::LPAREN, KDL::Token::Type::IDENT
-        raise "Unexpected #{t}"
-      end
+      parse_args_props_children(node)
 
       return {true, nil} if commented
+
+      unless type.nil?
+        return {true, node.as_type(type)} # TODO: type parsers
+      end
 
       {true, node}
     end
@@ -76,7 +75,7 @@ module KDL
         @tokenizer.next_token
         t.value.as(String)
       else
-        raise "Expected identifier, got #{t.type}"
+        raise_error "Expected identifier, got #{t.type}", t
       end
     end
 
@@ -96,55 +95,77 @@ module KDL
       t.type == KDL::Token::Type::NEWLINE || t.type == KDL::Token::Type::WS
     end
 
-    private def args_props_children(node : KDL::Node)
+    private def parse_args_props_children(node : KDL::Node)
       commented = false
+      has_children = false
       loop do
-        ws_star
-        case @tokenizer.peek_token.type
-        when KDL::Token::Type::IDENT
-          t = @tokenizer.peek_token_after_next
-          if t.type == KDL::Token::Type::EQUALS
-            prop = parse_prop
-            node.properties[prop[0]] = prop[1] unless commented
-          else
-            value = parse_value
-            node.arguments << value unless commented
+        peek = @tokenizer.peek_token
+        case peek.type
+        when -> (x: KDL::Token::Type) { commented }, KDL::Token::Type::WS
+          ws_star
+          peek = @tokenizer.peek_token
+          if !commented && peek.type == KDL::Token::Type::SLASHDASH
+            parse_slashdash
+            peek = @tokenizer.peek_token
+            commented = true
           end
-          commented = false
-        when KDL::Token::Type::LBRACE
-          @depth += 1
-          children = parse_children
-          node.children = children unless commented
-          expect_node_term
+          case peek.type
+          when KDL::Token::Type::STRING, KDL::Token::Type::IDENT
+            raise_error "Unexpected #{peek.type}", peek if has_children
+            t = @tokenizer.peek_token_after_next
+            if t.type == KDL::Token::Type::EQUALS
+              p = parse_prop
+              node.properties[p[0]] = p[1] unless commented
+            else
+              v = parse_value
+              node.arguments << v unless commented
+            end
+            commented = false
+          when KDL::Token::Type::NEWLINE, KDL::Token::Type::EOF, KDL::Token::Type::SEMICOLON
+            @tokenizer.next_token
+            return
+          when KDL::Token::Type::LBRACE
+            parse_lbrace(node, commented)
+            has_children = true
+            commented = false
+          when KDL::Token::Type::RBRACE
+            parse_rbrace
+            return
+          else
+            v = parse_value
+            raise_error "Unexpected #{peek.type}", peek if has_children
+            node.arguments << v unless commented
+            commented = false
+          end
+        when KDL::Token::Type::EOF, KDL::Token::Type::SEMICOLON, KDL::Token::Type::NEWLINE
+          @tokenizer.next_token
           return
+        when KDL::Token::Type::LBRACE
+          parse_lbrace(node, commented)
+          has_children = true
+          commented = false
         when KDL::Token::Type::RBRACE
-          raise "Unexpected }" if @depth.zero?
-          @depth -= 1
+          parse_rbrace
           return
         when KDL::Token::Type::SLASHDASH
+          parse_slashdash
           commented = true
-          @tokenizer.next_token
-          ws_star
-        when KDL::Token::Type::NEWLINE, KDL::Token::Type::EOF, KDL::Token::Type::SEMICOLON
-          @tokenizer.next_token
-          return
-        when KDL::Token::Type::STRING
-          t = @tokenizer.peek_token_after_next
-          case t.type
-          when KDL::Token::Type::EQUALS
-            prop = parse_prop
-            node.properties[prop[0]] = prop[1] unless commented
-          else
-            value = parse_value
-            node.arguments << value unless commented
-          end
-          commented = false
         else
-          value = parse_value
-          node.arguments << value unless commented
-          commented = false
+          raise_error "Unexpected #{peek.type} (#{peek.value})", peek
         end
       end
+    end
+
+    private def parse_lbrace(node, commented)
+      raise_error "Unexpected {" if !commented && node.children?
+      @depth += 1
+      children = parse_children
+      @depth -= 1
+      node.children = children unless commented
+    end
+
+    private def parse_rbrace
+      raise_error "Unexpected }" if @depth.zero?
     end
 
     private def parse_prop
@@ -165,6 +186,12 @@ module KDL
     private def parse_value
       type = parse_type
       t = @tokenizer.next_token
+      v = value_without_type(t)
+      return v if type.nil?
+      v.as_type(type) # TODO: type parser
+    end
+
+    private def value_without_type(t)
       case t.type
       when KDL::Token::Type::IDENT,
         KDL::Token::Type::STRING,
@@ -176,9 +203,9 @@ module KDL
         KDL::Token::Type::FALSE,
         KDL::Token::Type::NULL
 
-        return KDL::Value.new(t.value, type: type, format: t.meta[:format]?)
+        return KDL::Value.new(t.value, format: t.meta[:format]?)
       else
-        raise "Expected value, got #{t.type}"
+        raise_error "Expected value, got #{t.type}", t
       end
     end
 
@@ -193,9 +220,20 @@ module KDL
       type
     end
 
+    private def parse_slashdash
+      t = @tokenizer.next_token
+      raise_error "Expected SLASHDASH, found #{t.type}", t unless t.type == KDL::Token::Type::SLASHDASH
+      linespace_star
+      peek = @tokenizer.peek_token
+      case peek.type
+      when KDL::Token::Type::RBRACE, KDL::Token::Type::EOF, KDL::Token::Type::SEMICOLON
+        raise_error "Unexpected #{peek.type} after SLASHDASH", peek
+      end
+    end
+
     private def expect(type : KDL::Token::Type)
-      t = @tokenizer.peek_token.type
-      raise "Expected #{type}, got #{t}" unless t == type
+      t = @tokenizer.peek_token
+      raise_error "Expected #{type}, got #{t.type}", t unless t.type == type
 
       @tokenizer.next_token
     end
@@ -209,17 +247,34 @@ module KDL
       when KDL::Token::Type::RBRACE
         return
       else
-        raise "Unexpected #{t}"
+        raise_error "Unexpected #{t}", t
       end
     end
 
     private def expect_eof
-      t = @tokenizer.peek_token.type
-      case t
-      when KDL::Token::Type::EOF, KDL::Token::Type::NONE
+      t = @tokenizer.peek_token
+      case t.type
+      when KDL::Token::Type::EOF
         return
       else
-        raise "Expected EOF, got #{t}"
+        raise_error "Expected EOF, got #{t.type}", t
+      end
+    end
+
+    private def raise_error(error, token = nil)
+      line : Int32
+      column : Int32
+      if token.nil?
+        line = @tokenizer.line
+        column = @tokenizer.column
+      else
+        line = token.line
+        column = token.column
+      end
+      case error
+      when String then raise Error.new(error, line, column)
+      when Error then raise error
+      else raise Error.new(error.message, line, column)
       end
     end
   end
