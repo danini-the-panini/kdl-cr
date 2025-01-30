@@ -29,8 +29,9 @@ module KDL
     property line : Int32
     property column : Int32
     property meta : Hash(Symbol, String)
+    property comment : String?
 
-    def initialize(@type, @value, @line = 1, @column = 1, @meta = {} of Symbol => String)
+    def initialize(@type, @value, @line = 1, @column = 1, @meta = {} of Symbol => String, @comment = nil)
     end
 
     def ==(other : self)
@@ -104,6 +105,8 @@ module KDL
 
     property line
     property column
+    property comment
+    property has_comment
 
     @str : String
     @context : Context?
@@ -127,6 +130,8 @@ module KDL
       @peeked_tokens = [] of Token?
       @last_token = nil
       @comment_nesting = 1
+      @comment = ""
+      @has_comment = false
     end
 
     def version_directive
@@ -302,9 +307,11 @@ module KDL
             case self[@index + 1]
             when '/'
               self.context = Context::SingleLineComment
+              @has_comment = true
               traverse 2
             when '*'
               self.context = Context::MultiLineComment
+              @has_comment = true
               @comment_nesting = 1
               traverse 2
             when '-'
@@ -478,6 +485,7 @@ module KDL
           end
         when Context::SingleLineComment
           if NEWLINES.includes?(c) || c == '\r'
+            @comment += "\n"
             self.context = nil
             @column_at_start = @column
             next
@@ -485,17 +493,24 @@ module KDL
             @done = true
             return token(Token::Type::EOF, "")
           else
+            @comment += c.to_s
             traverse 1
           end
         when Context::MultiLineComment
           if c == '/' && self[@index + 1] == '*'
+            @comment += "/*"
             @comment_nesting += 1
             traverse 2
           elsif c == '*' && self[@index + 1] == '/'
             @comment_nesting -= 1
             traverse 2
-            revert_context if @comment_nesting == 0
+            if @comment_nesting == 0
+              revert_context 
+            else
+              @comment += "*/"
+            end
           else
+            @comment += c.to_s
             traverse 1
           end
         when Context::Whitespace
@@ -508,6 +523,7 @@ module KDL
             traverse 1
           elsif c == '/' && self[@index + 1] == '*'
             self.context = Context::MultiLineComment
+            @has_comment = true
             @comment_nesting = 1
             traverse 2
           elsif c == '\\'
@@ -536,7 +552,9 @@ module KDL
     end
 
     private def token(type, value, meta = {} of Symbol => String)
-      token = Token.new(type, value, @line_at_start, @column_at_start, meta)
+      token = Token.new(type, value, @line_at_start, @column_at_start, meta, has_comment ? comment.strip : nil)
+      @has_comment = false
+      @comment = ""
       @last_token = token unless type == Token::Type::EOF
       token
     end

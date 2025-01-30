@@ -5,15 +5,19 @@ require "./value"
 
 module KDL
   class Parser
+    private getter comments
+    private getter first_comment : String?
+  
     class Error < Exception
       def initialize(message, line, column)
         super("#{message} (#{line}:#{column})")
       end
     end
 
-    def initialize
+    def initialize(*, @comments = false)
       @tokenizer = KDL::Tokenizer.new("")
       @depth = 0
+      @first_comment = nil
     end
 
     def parse(string : String)
@@ -22,10 +26,11 @@ module KDL
     end
 
     private def parse_document
+      comment = parse_document_comment
       nodes = parse_nodes
       linespace_star
       expect_eof
-      KDL::Document.new(nodes)
+      KDL::Document.new(nodes, comment: comment)
     end
 
     private def parse_nodes
@@ -39,7 +44,8 @@ module KDL
     end
 
     private def parse_node
-      linespace_star
+      comment = @first_comment || linespace_star
+      @first_comment = nil
 
       commented = false
       if @tokenizer.peek_token.type == KDL::Token::Type::SLASHDASH
@@ -51,7 +57,7 @@ module KDL
       type : String?
       begin
         type = parse_type
-        node = KDL::Node.new(identifier)
+        node = KDL::Node.new(identifier, comment: comment)
       rescue error
         raise_error error unless type.nil?
         return {false, nil}
@@ -80,15 +86,31 @@ module KDL
     end
 
     private def ws_star
+      lines = [] of String
       while @tokenizer.peek_token.type == KDL::Token::Type::WS
-        @tokenizer.next_token
+        t = @tokenizer.next_token
+        if c = t.comment
+          lines << c
+        end
       end
+      return nil unless @comments
+
+      lines.empty? ? nil : lines.join("\n")
     end
 
     private def linespace_star
+      lines = [] of String
       while linespace?(@tokenizer.peek_token)
-        @tokenizer.next_token
+        t = @tokenizer.next_token
+        if c = t.comment
+          lines << c
+        elsif t.type == KDL::Token::Type::NEWLINE
+          lines = [] of String
+        end
       end
+      return nil unless @comments
+      
+      lines.empty? ? nil : lines.join("\n")
     end
 
     private def linespace?(t : KDL::Token)
@@ -102,7 +124,7 @@ module KDL
         peek = @tokenizer.peek_token
         case peek.type
         when -> (x: KDL::Token::Type) { commented }, KDL::Token::Type::WS
-          ws_star
+          comment = ws_star
           peek = @tokenizer.peek_token
           if !commented && peek.type == KDL::Token::Type::SLASHDASH
             parse_slashdash
@@ -114,10 +136,10 @@ module KDL
             raise_error "Unexpected #{peek.type}", peek if has_children
             t = @tokenizer.peek_token_after_next
             if t.type == KDL::Token::Type::EQUALS
-              p = parse_prop
+              p = parse_prop(comment)
               node.properties[p[0]] = p[1] unless commented
             else
-              v = parse_value
+              v = parse_value(comment)
               node.arguments << v unless commented
             end
             commented = false
@@ -132,7 +154,7 @@ module KDL
             parse_rbrace
             return
           else
-            v = parse_value
+            v = parse_value(comment)
             raise_error "Unexpected #{peek.type}", peek if has_children
             node.arguments << v unless commented
             commented = false
@@ -168,10 +190,10 @@ module KDL
       raise_error "Unexpected }" if @depth.zero?
     end
 
-    private def parse_prop
+    private def parse_prop(comment)
       name = identifier
       expect(KDL::Token::Type::EQUALS)
-      value = parse_value
+      value = parse_value(comment)
       return {name, value}
     end
 
@@ -183,10 +205,11 @@ module KDL
       nodes
     end
 
-    private def parse_value
+    private def parse_value(comment)
       type = parse_type
       t = @tokenizer.next_token
       v = value_without_type(t)
+      v.comment = comment
       return v if type.nil?
       v.as_type(type) # TODO: type parser
     end
@@ -218,6 +241,22 @@ module KDL
       expect(KDL::Token::Type::RPAREN)
       ws_star
       type
+    end
+
+    private def parse_document_comment
+      return nil unless @comments
+      
+      lines = [] of String
+      while linespace?(@tokenizer.peek_token)
+        t = @tokenizer.next_token
+        if c = t.comment
+          lines << c
+        else
+          return lines.empty? ? nil : lines.join("\n")
+        end
+      end
+      @first_comment = lines.empty? ? nil : lines.join("\n")
+      nil
     end
 
     private def parse_slashdash
