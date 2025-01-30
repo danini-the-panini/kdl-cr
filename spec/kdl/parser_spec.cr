@@ -470,4 +470,48 @@ describe KDL::Parser do
     ])
     doc.should eq nodes
   end
+
+  it "keeps comments" do
+    doc = KDL::Parser.new(comments: true).parse <<-KDL.strip
+    // This is a document
+    // with comments
+
+    // Some node
+    foo
+    /* Some other node */ (baz)bar
+    qux /* an arg */ 123 /* a prop */ norf=wat when=(date)"2025-01-30" {
+        // a child node
+        child
+    }
+    KDL
+
+    doc.comment.should eq "This is a document\nwith comments"
+    doc.nodes[0].comment.should eq "Some node"
+    doc.nodes[1].comment.should eq "Some other node"
+    doc.nodes[2].arguments[0].comment.should eq "an arg"
+    doc.nodes[2].properties["norf"].comment.should eq "a prop"
+    doc.nodes[2].properties["when"].comment.should eq nil
+    doc.nodes[2].children[0].comment.should eq "a child node"
+  end
+
+  it "does not treat first node comment as document comment" do
+    doc = KDL::Parser.new(comments: true).parse <<-KDL.strip
+    // Lorem ipsum
+    // Dolor sit amet
+    foo
+    KDL
+
+    doc.comment.should eq nil
+    doc.nodes[0].comment.should eq "Lorem ipsum\nDolor sit amet"
+
+    doc = KDL::Parser.new(comments: true).parse <<-KDL.strip
+    // Lorem ipsum
+    // Dolor sit amet
+
+    foo
+    KDL
+
+    doc.comment.should eq "Lorem ipsum\nDolor sit amet"
+    doc.nodes[0].comment.should eq nil
+  end
 end

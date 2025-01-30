@@ -7,8 +7,15 @@ module KDL
     # Returns the raw underlying value.
     property value : Type
     property type : String?
+    property comment : String?
 
-    def initialize(@value : Type, *, @type : String? = nil, @format : String? = nil)
+    def initialize(
+      @value : Type,
+      *,
+      @type : String? = nil,
+      @format : String? = nil,
+      @comment : String? = nil
+    )
     end
 
     def as_type(type : String?)

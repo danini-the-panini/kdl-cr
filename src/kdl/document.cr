@@ -3,8 +3,9 @@ require "./node"
 module KDL
   class Document
     property nodes
+    property comment
 
-    def initialize(@nodes = [] of Node)
+    def initialize(@nodes = [] of Node, *, @comment : String? = nil)
     end
 
     def [](index : Int)
@@ -66,6 +67,11 @@ module KDL
     def_hash nodes
 
     def to_s(io : IO) : Nil
+      if c = @comment
+        io << c.lines.map { |l| "// #{l}\n" }.join("")
+        io << "\n"
+      end
+
       if @nodes.empty?
         io << "\n"
         return

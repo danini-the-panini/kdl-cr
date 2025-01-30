@@ -13,4 +13,11 @@ module KDL
     else parse(file.read)
     end
   end
+
+  def self.build(*, comment : String? = nil, &)
+    builder = Builder.new
+    builder.document(comment: comment) do
+      yield builder
+    end
+  end
 end
