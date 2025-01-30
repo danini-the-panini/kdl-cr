@@ -243,5 +243,32 @@ describe KDL::Node do
       }
       KDL
     end
+
+    it "stringifies comments if present" do
+      node = KDL::Node.new("foo", comment: "This is a comment\nLorem ipsum dolor sit amet")
+
+      node.to_s.should eq <<-KDL
+      // This is a comment
+      // Lorem ipsum dolor sit amet
+      foo
+      KDL
+    end
+
+    it "stringifies arg and prop comments if present" do
+      node = KDL::Node.new("a1",
+        arguments: [KDL::Value.new("a", comment: "This is an arg"), KDL::Value.new(1i64, comment: "Another arg")],
+        properties: { "a" => KDL::Value.new(1i64, comment: "This is a prop") },
+        children: [KDL::Node.new("b1", comment: "This is a child node")],
+        comment: "This is a node"
+      )
+
+      node.to_s.should eq <<-KDL
+      // This is a node
+      a1 /* This is an arg */ a /* Another arg */ 1 /* This is a prop */ a=1 {
+          // This is a child node
+          b1
+      }
+      KDL
+    end
   end
 end

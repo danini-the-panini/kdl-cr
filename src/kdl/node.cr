@@ -5,8 +5,17 @@ module KDL
     property properties
     property children
     property type
+    property comment
 
-    def initialize(@name : String, *, @arguments = [] of KDL::Value, @properties = {} of String => KDL::Value, @children = [] of Node, @type : String? = nil)
+    def initialize(
+      @name : String,
+      *,
+      @arguments = [] of KDL::Value,
+      @properties = {} of String => KDL::Value,
+      @children = [] of Node,
+      @type : String? = nil,
+      @comment : String? = nil
+    )
     end
 
     def [](index : Int) : Value::Type
@@ -156,13 +165,25 @@ module KDL
 
     protected def stringify(level = 0) : String
       indent = "    " * level
+      s = ""
+      if c = @comment
+        s += c.lines.map { |l| "#{indent}// #{l}\n" }.join("")
+      end
       t = type
-      s = "#{indent}#{t.nil? ? "" : "(#{id_to_s t})"}#{id_to_s name}"
+      s += "#{indent}#{t.nil? ? "" : "(#{id_to_s t})"}#{id_to_s name}"
       unless arguments.empty?
-        s += " #{arguments.map(&.to_s).join(" ")}"
+        s += " #{arguments.map { |v|
+          vs = ""
+          vs += "/* #{c} */ " if c = v.comment
+          vs + v.to_s
+        }.join(" ")}"
       end
       unless properties.empty?
-        s += " #{properties.map { |k, v| "#{id_to_s k}=#{v}" }.join(" ")}"
+        s += " #{properties.map { |k, v|
+          vs = ""
+          vs += "/* #{c} */ " if c = v.comment
+          vs + "#{id_to_s k}=#{v}"
+        }.join(" ")}"
       end
       unless children.empty?
         s += " {\n"
