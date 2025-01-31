@@ -26,7 +26,7 @@ module KDL
       if parent = current_node
         parent.children << node
       else
-        document.nodes << node
+        document << node
       end
     end
 

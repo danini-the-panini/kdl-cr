@@ -2,10 +2,24 @@ require "./node"
 
 module KDL
   class Document
+    include Enumerable(Node)
+
     property nodes
     property comment
 
     def initialize(@nodes = [] of Node, *, @comment : String? = nil)
+    end
+
+    def each(&)
+      @nodes.each { |n| yield n }
+    end
+
+    def <<(node)
+      @nodes << node
+    end
+
+    def empty?
+      @nodes.empty?
     end
 
     def [](index : Int)

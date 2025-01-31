@@ -12,7 +12,7 @@ module KDL
       *,
       @arguments = [] of KDL::Value,
       @properties = {} of String => KDL::Value,
-      @children = [] of Node,
+      @children : KDL::Document = KDL::Document.new,
       @type : String? = nil,
       @comment : String? = nil,
     )
