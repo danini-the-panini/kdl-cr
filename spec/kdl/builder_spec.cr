@@ -24,7 +24,7 @@ describe KDL::Builder do
       KDL
     end
 
-    it "build kdl documents with comments" do
+    it "builds kdl documents with comments" do
       doc = KDL.build(comment: "This is a document\nwith comments") do |kdl|
         kdl.node "foo", comment: "Some node"
         kdl.node "bar", type: "baz", comment: "Some other node"
@@ -39,7 +39,7 @@ describe KDL::Builder do
       doc.to_s.should eq <<-KDL
       // This is a document
       // with comments
-      
+
       // Some node
       foo
       // Some other node
@@ -47,6 +47,23 @@ describe KDL::Builder do
       qux /* an arg */ 123 /* a prop */ norf=wat when=(date)"2025-01-30" {
           // a child node
           child
+      }
+
+      KDL
+    end
+
+    it "builds a node with a single argument" do
+      doc = KDL.build do |kdl|
+        kdl.node "snorlax" do
+          kdl.node "size", 10_i64
+          kdl.node "state", "asleep"
+        end
+      end
+
+      doc.to_s.should eq <<-KDL
+      snorlax {
+          size 10
+          state asleep
       }
 
       KDL

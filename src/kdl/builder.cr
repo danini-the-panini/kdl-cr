@@ -34,6 +34,10 @@ module KDL
       node(name, type: type, comment: comment) {}
     end
 
+    def node(name : String, argument : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
+      node(name, type: type, comment: comment) { arg argument }
+    end
+
     def arg(value : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
       if node = current_node
         node.arguments << KDL::Value.new(value, type: type, comment: comment)
