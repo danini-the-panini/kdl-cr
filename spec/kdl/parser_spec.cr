@@ -472,7 +472,7 @@ describe KDL::Parser do
   end
 
   it "keeps comments" do
-    doc = KDL::Parser.new(comments: true).parse <<-KDL.strip
+    doc = KDL::Parser.new(parse_comments: true).parse <<-KDL.strip
     // This is a document
     // with comments
 
@@ -495,7 +495,7 @@ describe KDL::Parser do
   end
 
   it "does not treat first node comment as document comment" do
-    doc = KDL::Parser.new(comments: true).parse <<-KDL.strip
+    doc = KDL::Parser.new(parse_comments: true).parse <<-KDL.strip
     // Lorem ipsum
     // Dolor sit amet
     foo
@@ -504,7 +504,7 @@ describe KDL::Parser do
     doc.comment.should eq nil
     doc.nodes[0].comment.should eq "Lorem ipsum\nDolor sit amet"
 
-    doc = KDL::Parser.new(comments: true).parse <<-KDL.strip
+    doc = KDL::Parser.new(parse_comments: true).parse <<-KDL.strip
     // Lorem ipsum
     // Dolor sit amet
 
