@@ -12,19 +12,19 @@ module KDL
       when '\r' then "\\r"
       when '\t' then "\\t"
       when '\\' then "\\\\"
-      when '"' then "\\\""
+      when '"'  then "\\\""
       when '\b' then "\\b"
       when '\f' then "\\f"
-      else char.to_s
+      else           char.to_s
       end
     end
 
     private FORBIDDEN =
       Tokenizer::SYMBOLS.keys +
-      Tokenizer::WHITESPACE +
-      Tokenizer::NEWLINES +
-      "()[]/\\\"#".chars +
-      ('\u{0}'..'\u{20}').to_a
+        Tokenizer::WHITESPACE +
+        Tokenizer::NEWLINES +
+        "()[]/\\\"#".chars +
+        ('\u{0}'..'\u{20}').to_a
 
     private def self.bare_identifier?(name : String)
       case name

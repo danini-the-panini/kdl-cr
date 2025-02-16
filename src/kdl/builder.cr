@@ -4,9 +4,9 @@ module KDL
   class Builder
     class Error < Exception
     end
-  
+
     private getter document
-  
+
     def initialize
       @nesting = [] of KDL::Node
       @document = KDL::Document.new
@@ -31,7 +31,7 @@ module KDL
     end
 
     def node(name : String, *, type : String? = nil, comment : String? = nil)
-      node(name, type: type, comment: comment) {}
+      node(name, type: type, comment: comment) { }
     end
 
     def arg(value : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)

@@ -18,7 +18,7 @@ describe KDL::Parser do
     parser.parse("node1\nnode2").should eq(
       KDL::Document.new([
         KDL::Node.new("node1"),
-        KDL::Node.new("node2")
+        KDL::Node.new("node2"),
       ])
     )
   end
@@ -33,8 +33,8 @@ describe KDL::Parser do
         KDL::Value.new("3"),
         KDL::Value.new(true),
         KDL::Value.new(false),
-        KDL::Value.new(nil)
-      ] of KDL::Value)
+        KDL::Value.new(nil),
+      ] of KDL::Value),
     ])
     parser.parse("node {\n  node2\n}").should eq KDL::Document.new([KDL::Node.new("node", children: [KDL::Node.new("node2")])])
     parser.parse("node {\n    node2    \n}").should eq KDL::Document.new([KDL::Node.new("node", children: [KDL::Node.new("node2")])])
@@ -65,7 +65,7 @@ describe KDL::Parser do
   it "parses prop slashdash comment" do
     parser.parse("node /-key=1").should eq KDL::Document.new([KDL::Node.new("node")])
     parser.parse("node /- key=1").should eq KDL::Document.new([KDL::Node.new("node")])
-    parser.parse("node key=1 /-key2=2").should eq KDL::Document.new([KDL::Node.new("node", properties: { "key" => KDL::Value.new(1i64) } of String => KDL::Value)])
+    parser.parse("node key=1 /-key2=2").should eq KDL::Document.new([KDL::Node.new("node", properties: {"key" => KDL::Value.new(1i64)} of String => KDL::Value)])
   end
 
   it "parses children slashdash comment" do
@@ -238,17 +238,17 @@ describe KDL::Parser do
       KDL::Node.new("author",
         arguments: [KDL::Value.new("Alex Monad")],
         properties: {
-          "email" => KDL::Value.new("alex@example.com"),
-          "active" => KDL::Value.new(true)
+          "email"  => KDL::Value.new("alex@example.com"),
+          "active" => KDL::Value.new(true),
         }
       ),
       KDL::Node.new("foo",
         arguments: [KDL::Value.new("baz"), KDL::Value.new(1i64), KDL::Value.new(2i64), KDL::Value.new(3i64)],
         properties: {
-          "bar" => KDL::Value.new(true),
-          "quux" => KDL::Value.new(false)
+          "bar"  => KDL::Value.new(true),
+          "quux" => KDL::Value.new(false),
         }
-      )
+      ),
     ])
     doc.should eq nodes
   end
@@ -266,9 +266,9 @@ describe KDL::Parser do
       KDL::Node.new("contents", children: [
         KDL::Node.new("section", arguments: [KDL::Value.new("First section")], children: [
           KDL::Node.new("paragraph", arguments: [KDL::Value.new("This is the first paragraph")]),
-          KDL::Node.new("paragraph", arguments: [KDL::Value.new("This is the second paragraph")])
-        ])
-      ])
+          KDL::Node.new("paragraph", arguments: [KDL::Value.new("This is the second paragraph")]),
+        ]),
+      ]),
     ])
     doc.should eq nodes
   end
@@ -278,7 +278,7 @@ describe KDL::Parser do
     nodes = KDL::Document.new([
       KDL::Node.new("node1"),
       KDL::Node.new("node2"),
-      KDL::Node.new("node3")
+      KDL::Node.new("node3"),
     ])
     doc.should eq nodes
   end
@@ -289,8 +289,8 @@ describe KDL::Parser do
       KDL::Node.new("node", children: [
         KDL::Node.new("foo"),
         KDL::Node.new("bar"),
-        KDL::Node.new("baz")
-      ])
+        KDL::Node.new("baz"),
+      ]),
     ])
     doc.should eq nodes
   end
@@ -304,7 +304,7 @@ describe KDL::Parser do
     nodes = KDL::Document.new([
       KDL::Node.new("node", arguments: [KDL::Value.new("this\nhas\tescapes")]),
       KDL::Node.new("other", arguments: [KDL::Value.new("C:\\Users\\zkat\\")]),
-      KDL::Node.new("other-raw", arguments: [KDL::Value.new("hello\"world")])
+      KDL::Node.new("other-raw", arguments: [KDL::Value.new("hello\"world")]),
     ])
     doc.should eq nodes
   end
@@ -318,7 +318,7 @@ describe KDL::Parser do
     """
     KDL
     nodes = KDL::Document.new([
-      KDL::Node.new("string", arguments: [KDL::Value.new("my\nmultiline\nvalue")])
+      KDL::Node.new("string", arguments: [KDL::Value.new("my\nmultiline\nvalue")]),
     ])
     doc.should eq nodes
   end
@@ -336,7 +336,7 @@ describe KDL::Parser do
       KDL::Node.new("my-hex", arguments: [KDL::Value.new(0xdeadbeef)]),
       KDL::Node.new("my-octal", arguments: [KDL::Value.new(493i64)]),
       KDL::Node.new("my-binary", arguments: [KDL::Value.new(173i64)]),
-      KDL::Node.new("bignum", arguments: [KDL::Value.new(1000000i64)])
+      KDL::Node.new("bignum", arguments: [KDL::Value.new(1000000i64)]),
     ])
     doc.should eq nodes
   end
@@ -356,7 +356,7 @@ describe KDL::Parser do
     */*/
     KDL
     nodes = KDL::Document.new([
-      KDL::Node.new("tag", properties: { "bar" => KDL::Value.new(false) })
+      KDL::Node.new("tag", properties: {"bar" => KDL::Value.new(false)}),
     ])
     doc.should eq nodes
   end
@@ -375,7 +375,7 @@ describe KDL::Parser do
     }
     KDL
     nodes = KDL::Document.new([
-      KDL::Node.new("mynode", arguments: [KDL::Value.new("not commented")])
+      KDL::Node.new("mynode", arguments: [KDL::Value.new("not commented")]),
     ])
     doc.should eq nodes
   end
@@ -390,7 +390,7 @@ describe KDL::Parser do
     KDL
     nodes = KDL::Document.new([
       KDL::Node.new("title", arguments: [KDL::Value.new("Some title")]),
-      KDL::Node.new("my-node", arguments: [KDL::Value.new(1i64), KDL::Value.new(2i64), KDL::Value.new(3i64), KDL::Value.new(4i64)])
+      KDL::Node.new("my-node", arguments: [KDL::Value.new(1i64), KDL::Value.new(2i64), KDL::Value.new(3i64), KDL::Value.new(4i64)]),
     ])
     doc.should eq nodes
   end
@@ -402,7 +402,7 @@ describe KDL::Parser do
     KDL
     nodes = KDL::Document.new([
       KDL::Node.new("smile", arguments: [KDL::Value.new("😁")]),
-      KDL::Node.new("ノード", properties: { "お名前" => KDL::Value.new("☜(ﾟヮﾟ☜)") })
+      KDL::Node.new("ノード", properties: {"お名前" => KDL::Value.new("☜(ﾟヮﾟ☜)")}),
     ])
     doc.should eq nodes
   end
@@ -414,9 +414,9 @@ describe KDL::Parser do
     - 1
     KDL
     nodes = KDL::Document.new([
-      KDL::Node.new(%(!@$@$%Q$%~@!40), arguments: [KDL::Value.new("1.2.3")], properties: { "!!!!!" => KDL::Value.new(true) }),
+      KDL::Node.new(%(!@$@$%Q$%~@!40), arguments: [KDL::Value.new("1.2.3")], properties: {"!!!!!" => KDL::Value.new(true)}),
       KDL::Node.new(%(foo123~!@$%^&*.:'|?+), arguments: [KDL::Value.new("weeee")]),
-      KDL::Node.new("-", arguments: [KDL::Value.new(1i64)])
+      KDL::Node.new("-", arguments: [KDL::Value.new(1i64)]),
     ])
     doc.should eq nodes
   end
@@ -428,7 +428,7 @@ describe KDL::Parser do
     KDL
     nodes = KDL::Document.new([
       KDL::Node.new("node1", arguments: [KDL::Value.new("😀")]),
-      KDL::Node.new("node2", arguments: [KDL::Value.new("\n\t\r\\\"\f\b")])
+      KDL::Node.new("node2", arguments: [KDL::Value.new("\n\t\r\\\"\f\b")]),
     ])
     doc.should eq nodes
   end
@@ -436,7 +436,7 @@ describe KDL::Parser do
   it "parses node type" do
     doc = parser.parse("(foo)node")
     nodes = KDL::Document.new([
-      KDL::Node.new("node", type: "foo")
+      KDL::Node.new("node", type: "foo"),
     ])
     doc.should eq nodes
   end
@@ -444,7 +444,7 @@ describe KDL::Parser do
   it "parses value type" do
     doc = parser.parse(%(node (foo)"bar"))
     nodes = KDL::Document.new([
-      KDL::Node.new("node", arguments: [KDL::Value.new("bar").as_type("foo")])
+      KDL::Node.new("node", arguments: [KDL::Value.new("bar").as_type("foo")]),
     ])
     doc.should eq nodes
   end
@@ -452,7 +452,7 @@ describe KDL::Parser do
   it "parses property type" do
     doc = parser.parse(%(node baz=(foo)"bar"))
     nodes = KDL::Document.new([
-      KDL::Node.new("node", properties: { "baz" => KDL::Value.new("bar").as_type("foo")})
+      KDL::Node.new("node", properties: {"baz" => KDL::Value.new("bar").as_type("foo")}),
     ])
     doc.should eq nodes
   end
@@ -465,7 +465,7 @@ describe KDL::Parser do
     KDL
     nodes = KDL::Document.new([
       KDL::Node.new("node", children: [
-        KDL::Node.new("bar", type: "foo")
+        KDL::Node.new("bar", type: "foo"),
       ]),
     ])
     doc.should eq nodes

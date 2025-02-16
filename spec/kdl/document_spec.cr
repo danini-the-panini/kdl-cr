@@ -5,7 +5,7 @@ describe KDL::Document do
     it "references nodes" do
       doc = KDL::Document.new([
         KDL::Node.new("foo"),
-        KDL::Node.new("bar")
+        KDL::Node.new("bar"),
       ])
 
       doc[0].should eq doc.nodes[0]
@@ -25,7 +25,7 @@ describe KDL::Document do
     it "references nodes" do
       doc = KDL::Document.new([
         KDL::Node.new("foo"),
-        KDL::Node.new("bar")
+        KDL::Node.new("bar"),
       ])
 
       doc[0]?.should eq doc.nodes[0]
@@ -46,7 +46,7 @@ describe KDL::Document do
       doc = KDL::Document.new([
         KDL::Node.new("foo", arguments: [KDL::Value.new("bar")]),
         KDL::Node.new("baz", arguments: [KDL::Value.new("qux")]),
-        KDL::Node.new("norf")
+        KDL::Node.new("norf"),
       ])
 
       doc.arg(0).should eq "bar"
@@ -68,7 +68,7 @@ describe KDL::Document do
       doc = KDL::Document.new([
         KDL::Node.new("foo", arguments: [KDL::Value.new("bar")]),
         KDL::Node.new("baz", arguments: [KDL::Value.new("qux")]),
-        KDL::Node.new("norf")
+        KDL::Node.new("norf"),
       ])
 
       doc.arg?(0).should eq "bar"
@@ -91,12 +91,12 @@ describe KDL::Document do
         KDL::Node.new("foo", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
           KDL::Node.new("-", arguments: [KDL::Value.new("bar")]),
-          KDL::Node.new("-", arguments: [KDL::Value.new("baz")])
+          KDL::Node.new("-", arguments: [KDL::Value.new("baz")]),
         ]),
         KDL::Node.new("bar", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
-          KDL::Node.new("-")
-        ])
+          KDL::Node.new("-"),
+        ]),
       ])
 
       doc.dash_vals(0).should eq ["foo", "bar", "baz"]
@@ -116,12 +116,12 @@ describe KDL::Document do
         KDL::Node.new("foo", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
           KDL::Node.new("-", arguments: [KDL::Value.new("bar")]),
-          KDL::Node.new("-", arguments: [KDL::Value.new("baz")])
+          KDL::Node.new("-", arguments: [KDL::Value.new("baz")]),
         ]),
         KDL::Node.new("bar", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
-          KDL::Node.new("-")
-        ])
+          KDL::Node.new("-"),
+        ]),
       ])
 
       doc.dash_vals?(0).should eq ["foo", "bar", "baz"]
@@ -138,10 +138,10 @@ describe KDL::Document do
   describe "#to_s" do
     doc = KDL::Document.new([
       KDL::Node.new("b1", arguments: [KDL::Value.new("b"), KDL::Value.new(1i64, type: "foo")], children: [
-        KDL::Node.new("c1", arguments: [KDL::Value.new("c"), KDL::Value.new(1i64)])
+        KDL::Node.new("c1", arguments: [KDL::Value.new("c"), KDL::Value.new(1i64)]),
       ]),
-      KDL::Node.new("b2", arguments: [KDL::Value.new("b")], properties: { "c" => KDL::Value.new(2i64, type: "bar") }, children: [
-        KDL::Node.new("c2", arguments: [KDL::Value.new("c"), KDL::Value.new(2i64)])
+      KDL::Node.new("b2", arguments: [KDL::Value.new("b")], properties: {"c" => KDL::Value.new(2i64, type: "bar")}, children: [
+        KDL::Node.new("c2", arguments: [KDL::Value.new("c"), KDL::Value.new(2i64)]),
       ]),
       KDL::Node.new("b3", children: [] of KDL::Node, type: "baz"),
     ])
