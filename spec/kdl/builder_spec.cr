@@ -68,5 +68,16 @@ describe KDL::Builder do
 
       KDL
     end
+
+    it "builds a node with multiple arguments and properties" do
+      doc = KDL.build do |kdl|
+        kdl.node "pokemon", "snorlax", "jigglypuff", pokemon_type: "normal", level: 10_i64
+      end
+
+      doc.to_s.should eq <<-KDL
+      pokemon snorlax jigglypuff pokemon_type=normal level=10
+
+      KDL
+    end
   end
 end

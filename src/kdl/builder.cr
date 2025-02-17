@@ -4,9 +4,9 @@ module KDL
   class Builder
     class Error < Exception
     end
-  
+
     private getter document
-  
+
     def initialize
       @nesting = [] of KDL::Node
       @document = KDL::Document.new
@@ -30,12 +30,18 @@ module KDL
       end
     end
 
-    def node(name : String, *, type : String? = nil, comment : String? = nil)
-      node(name, type: type, comment: comment) {}
+    def node(name : String, *arguments, type : String? = nil, comment : String? = nil)
+      node name, type: type, comment: comment do
+        arguments.each &->arg(KDL::Value::Type)
+      end
     end
 
-    def node(name : String, argument : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
-      node(name, type: type, comment: comment) { arg argument }
+    # Bug: https://github.com/crystal-lang/crystal/issues/15484, separate overload needed for double splat
+    def node(name : String, *arguments, type : String? = nil, comment : String? = nil, **properties)
+      node name, type: type, comment: comment do
+        arguments.each &->arg(KDL::Value::Type)
+        properties.each &->prop(Symbol, KDL::Value::Type)
+      end
     end
 
     def arg(value : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
@@ -46,7 +52,8 @@ module KDL
       end
     end
 
-    def prop(key : String, value : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
+    def prop(key : String | Symbol, value : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
+      key = key.to_s
       if node = current_node
         node.properties[key] = KDL::Value.new(value, type: type, comment: comment)
       else
