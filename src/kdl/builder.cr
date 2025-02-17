@@ -31,25 +31,21 @@ module KDL
     end
 
     def node(name : String, *, type : String? = nil, comment : String? = nil)
-      node name, type: type, comment: comment do
-      end
+      node(name, type: type, comment: comment) { }
     end
 
-    # Bug: https://github.com/crystal-lang/crystal/issues/15484, separate overload needed for splats
     def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil)
       node name, type: type, comment: comment do
         arguments.each &->arg(KDL::Value::Type)
       end
     end
 
-    # :ditto:
     def node(name : String, *, type : String? = nil, comment : String? = nil, **properties : KDL::Value::Type)
       node name, type: type, comment: comment do
         properties.each &->prop(Symbol, KDL::Value::Type)
       end
     end
 
-    # :ditto:
     def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil, **properties : KDL::Value::Type)
       node name, type: type, comment: comment do
         arguments.each &->arg(KDL::Value::Type)
