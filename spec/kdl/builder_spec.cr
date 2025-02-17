@@ -7,7 +7,7 @@ describe KDL::Builder do
         kdl.node "foo"
         kdl.node "bar", type: "baz"
         kdl.node "qux" do
-          kdl.arg 123i64
+          kdl.arg 123
           kdl.prop "norf", "wat"
           kdl.prop "when", "2025-01-30", type: "date"
           kdl.node "child"
@@ -29,7 +29,7 @@ describe KDL::Builder do
         kdl.node "foo", comment: "Some node"
         kdl.node "bar", type: "baz", comment: "Some other node"
         kdl.node "qux" do
-          kdl.arg 123i64, comment: "an arg"
+          kdl.arg 123, comment: "an arg"
           kdl.prop "norf", "wat", comment: "a prop"
           kdl.prop "when", "2025-01-30", type: "date"
           kdl.node "child", comment: "a child node"
@@ -39,7 +39,7 @@ describe KDL::Builder do
       doc.to_s.should eq <<-KDL
       // This is a document
       // with comments
-      
+
       // Some node
       foo
       // Some other node
@@ -48,6 +48,28 @@ describe KDL::Builder do
           // a child node
           child
       }
+
+      KDL
+    end
+
+    it "builds a node with an integer" do
+      doc = KDL.build do |kdl|
+        kdl.node "three" { kdl.arg 3 }
+      end
+
+      doc.to_s.should eq <<-KDL
+      three 3
+
+      KDL
+    end
+
+    it "builds a node with a float" do
+      doc = KDL.build do |kdl|
+        kdl.node "pi" { kdl.arg 3.14 }
+      end
+
+      doc.to_s.should eq <<-KDL
+      pi 3.14
 
       KDL
     end

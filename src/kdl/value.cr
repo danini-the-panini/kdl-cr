@@ -2,7 +2,7 @@ require "big"
 
 module KDL
   class Value
-    alias Type = Nil | Bool | Int64 | Float64 | BigInt | BigDecimal | String
+    alias Type = Nil | Bool | Number::Primitive | BigInt | BigDecimal | String
 
     # Returns the raw underlying value.
     property value : Type
@@ -14,7 +14,7 @@ module KDL
       *,
       @type : String? = nil,
       @format : String? = nil,
-      @comment : String? = nil
+      @comment : String? = nil,
     )
     end
 
@@ -134,12 +134,12 @@ module KDL
 
       case v = @value
       when String then io << StringDumper.call(v)
-      when Bool then io << "##{v}"
+      when Bool   then io << "##{v}"
       when Float64
         case v
-        when Float64::INFINITY then io << "#inf"
-        when -Float64::INFINITY then io << "#-inf"
-        when -> (c : Float64) { c.nan? } then io << "#nan"
+        when Float64::INFINITY          then io << "#inf"
+        when -Float64::INFINITY         then io << "#-inf"
+        when ->(c : Float64) { c.nan? } then io << "#nan"
         else
           if f = @format
             io << sprintf(f, v)
@@ -147,9 +147,9 @@ module KDL
             v.to_s(io)
           end
         end
-      when nil then io << "#null"
+      when nil        then io << "#null"
       when BigDecimal then io << v.to_s.upcase
-      else v.to_s(io)
+      else                 v.to_s(io)
       end
     end
 
