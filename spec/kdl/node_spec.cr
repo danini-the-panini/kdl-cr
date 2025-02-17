@@ -3,11 +3,11 @@ require "../spec_helper"
 describe KDL::Node do
   describe "#[]" do
     it "returns the argument or property" do
-      node = KDL::Node.new("node", arguments: [KDL::Value.new(1i64), KDL::Value.new("two")], properties: { "three" => KDL::Value.new(3i64), "four" => KDL::Value.new(4i64) })
+      node = KDL::Node.new("node", arguments: [KDL::Value.new(1i64), KDL::Value.new("two")], properties: {"three" => KDL::Value.new(3i64), "four" => KDL::Value.new(4i64)})
 
       node[0].should eq 1i64
       node[1].should eq "two"
-      
+
       node["three"].should eq 3i64
       node[:three].should eq 3i64
       node[:four].should eq 4i64
@@ -20,11 +20,11 @@ describe KDL::Node do
 
   describe "#[]?" do
     it "returns the argument or property" do
-      node = KDL::Node.new("node", arguments: [KDL::Value.new(1i64), KDL::Value.new("two")], properties: { "three" => KDL::Value.new(3i64), "four" => KDL::Value.new(4i64) })
+      node = KDL::Node.new("node", arguments: [KDL::Value.new(1i64), KDL::Value.new("two")], properties: {"three" => KDL::Value.new(3i64), "four" => KDL::Value.new(4i64)})
 
       node[0]?.should eq 1i64
       node[1]?.should eq "two"
-      
+
       node["three"]?.should eq 3i64
       node[:three]?.should eq 3i64
       node[:four]?.should eq 4i64
@@ -39,7 +39,7 @@ describe KDL::Node do
     it "returns the matching child node" do
       node = KDL::Node.new("node", children: [
         KDL::Node.new("foo"),
-        KDL::Node.new("bar")
+        KDL::Node.new("bar"),
       ])
 
       node.child(0).should eq node.children[0]
@@ -59,7 +59,7 @@ describe KDL::Node do
     it "returns the matching child node" do
       node = KDL::Node.new("node", children: [
         KDL::Node.new("foo"),
-        KDL::Node.new("bar")
+        KDL::Node.new("bar"),
       ])
 
       node.child?(0).should eq node.children[0]
@@ -80,7 +80,7 @@ describe KDL::Node do
       node = KDL::Node.new("node", children: [
         KDL::Node.new("foo", arguments: [KDL::Value.new("bar")]),
         KDL::Node.new("baz", arguments: [KDL::Value.new("qux")]),
-        KDL::Node.new("norf")
+        KDL::Node.new("norf"),
       ])
 
       node.arg(0).should eq "bar"
@@ -103,7 +103,7 @@ describe KDL::Node do
       node = KDL::Node.new("node", children: [
         KDL::Node.new("foo", arguments: [KDL::Value.new("bar")]),
         KDL::Node.new("baz", arguments: [KDL::Value.new("qux")]),
-        KDL::Node.new("norf")
+        KDL::Node.new("norf"),
       ])
 
       node.arg?(0).should eq "bar"
@@ -125,7 +125,7 @@ describe KDL::Node do
     it "returns the args of the matched child" do
       node = KDL::Node.new("node", children: [
         KDL::Node.new("foo", arguments: [KDL::Value.new("bar"), KDL::Value.new("baz")]),
-        KDL::Node.new("qux", arguments: [KDL::Value.new("norf")])
+        KDL::Node.new("qux", arguments: [KDL::Value.new("norf")]),
       ])
 
       node.args(0).should eq ["bar", "baz"]
@@ -144,7 +144,7 @@ describe KDL::Node do
     it "returns the args of the matched child" do
       node = KDL::Node.new("node", children: [
         KDL::Node.new("foo", arguments: [KDL::Value.new("bar"), KDL::Value.new("baz")]),
-        KDL::Node.new("qux", arguments: [KDL::Value.new("norf")])
+        KDL::Node.new("qux", arguments: [KDL::Value.new("norf")]),
       ])
 
       node.args?(0).should eq ["bar", "baz"]
@@ -165,12 +165,12 @@ describe KDL::Node do
         KDL::Node.new("foo", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
           KDL::Node.new("-", arguments: [KDL::Value.new("bar")]),
-          KDL::Node.new("-", arguments: [KDL::Value.new("baz")])
+          KDL::Node.new("-", arguments: [KDL::Value.new("baz")]),
         ]),
         KDL::Node.new("bar", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
           KDL::Node.new("-"),
-        ])
+        ]),
       ])
 
       node.dash_vals(0).should eq %w[foo bar baz]
@@ -192,12 +192,12 @@ describe KDL::Node do
         KDL::Node.new("foo", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
           KDL::Node.new("-", arguments: [KDL::Value.new("bar")]),
-          KDL::Node.new("-", arguments: [KDL::Value.new("baz")])
+          KDL::Node.new("-", arguments: [KDL::Value.new("baz")]),
         ]),
         KDL::Node.new("bar", children: [
           KDL::Node.new("-", arguments: [KDL::Value.new("foo")]),
           KDL::Node.new("-"),
-        ])
+        ]),
       ])
 
       node.dash_vals?(0).should eq %w[foo bar baz]
@@ -215,18 +215,18 @@ describe KDL::Node do
 
   describe "#to_s" do
     it "returns stringified props and args" do
-      node = KDL::Node.new("foo", arguments: [KDL::Value.new(1i64), KDL::Value.new("two")], properties: { "three" => KDL::Value.new(3i64) })
+      node = KDL::Node.new("foo", arguments: [KDL::Value.new(1i64), KDL::Value.new("two")], properties: {"three" => KDL::Value.new(3i64)})
 
       node.to_s.should eq "foo 1 two three=3"
     end
 
     it "returns stringified children" do
-      node = KDL::Node.new("a1", arguments: [KDL::Value.new("a"), KDL::Value.new(1i64)], properties: { "a" => KDL::Value.new(1i64) }, children: [
+      node = KDL::Node.new("a1", arguments: [KDL::Value.new("a"), KDL::Value.new(1i64)], properties: {"a" => KDL::Value.new(1i64)}, children: [
         KDL::Node.new("b1", arguments: [KDL::Value.new("b"), KDL::Value.new(1i64, type: "foo")], children: [
-          KDL::Node.new("c1", arguments: [KDL::Value.new("c"), KDL::Value.new(1i64)])
+          KDL::Node.new("c1", arguments: [KDL::Value.new("c"), KDL::Value.new(1i64)]),
         ]),
-        KDL::Node.new("b2", arguments: [KDL::Value.new("b")], properties: { "c" => KDL::Value.new(2i64, type: "bar") }, children: [
-          KDL::Node.new("c2", arguments: [KDL::Value.new("c"), KDL::Value.new(2i64)])
+        KDL::Node.new("b2", arguments: [KDL::Value.new("b")], properties: {"c" => KDL::Value.new(2i64, type: "bar")}, children: [
+          KDL::Node.new("c2", arguments: [KDL::Value.new("c"), KDL::Value.new(2i64)]),
         ]),
         KDL::Node.new("b3", children: [] of KDL::Node, type: "baz"),
       ])
@@ -257,7 +257,7 @@ describe KDL::Node do
     it "stringifies arg and prop comments if present" do
       node = KDL::Node.new("a1",
         arguments: [KDL::Value.new("a", comment: "This is an arg"), KDL::Value.new(1i64, comment: "Another arg")],
-        properties: { "a" => KDL::Value.new(1i64, comment: "This is a prop") },
+        properties: {"a" => KDL::Value.new(1i64, comment: "This is a prop")},
         children: [KDL::Node.new("b1", comment: "This is a child node")],
         comment: "This is a node"
       )

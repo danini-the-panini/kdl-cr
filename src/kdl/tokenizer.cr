@@ -67,7 +67,7 @@ module KDL
       '{' => Token::Type::LBRACE,
       '}' => Token::Type::RBRACE,
       ';' => Token::Type::SEMICOLON,
-      '=' => Token::Type::EQUALS
+      '=' => Token::Type::EQUALS,
     }
 
     WHITESPACE = [
@@ -75,20 +75,20 @@ module KDL
       '\u2000', '\u2001', '\u2002', '\u2003',
       '\u2004', '\u2005', '\u2006', '\u2007',
       '\u2008', '\u2009', '\u200A', '\u202F',
-      '\u205F', '\u3000'
+      '\u205F', '\u3000',
     ]
-    WS = "[#{Regex.escape(WHITESPACE.join)}]"
+    WS      = "[#{Regex.escape(WHITESPACE.join)}]"
     WS_STAR = /\A#{WS}*\z/
     WS_PLUS = /\A#{WS}+\z/
 
-    NEWLINES = ['\u000A', '\u0085', '\u000B', '\u000C', '\u2028', '\u2029']
-    NEWLINES_PATTERN = /(#{NEWLINES.map{|c|Regex.escape(c)}.join('|')}|\r\n?)/
+    NEWLINES         = ['\u000A', '\u0085', '\u000B', '\u000C', '\u2028', '\u2029']
+    NEWLINES_PATTERN = /(#{NEWLINES.map { |c| Regex.escape(c) }.join('|')}|\r\n?)/
 
     OTHER_NON_IDENTIFIER_CHARS = ('\u0000'..'\u0020').to_a - WHITESPACE
 
     NON_IDENTIFIER_CHARS = Regex.escape "#{SYMBOLS.keys.join("")}()[]/\\\"##{WHITESPACE.join}#{OTHER_NON_IDENTIFIER_CHARS.join}"
 
-    IDENTIFER_CHARS = /[^#{NON_IDENTIFIER_CHARS}]/
+    IDENTIFER_CHARS          = /[^#{NON_IDENTIFIER_CHARS}]/
     INITIAL_IDENTIFIER_CHARS = /[^#{NON_IDENTIFIER_CHARS}0-9]/
 
     FORBIDDEN = [
@@ -98,7 +98,7 @@ module KDL
       *'\u200E'..'\u200F',
       *'\u202A'..'\u202E',
       *'\u2066'..'\u2069',
-      '\uFEFF'
+      '\uFEFF',
     ]
 
     VERSION_PATTERN = /\A\/-[#{WHITESPACE.join}]*kdl-version[#{WHITESPACE.join}]+(\d+)[#{WHITESPACE.join}]*[#{NEWLINES.join}]/
@@ -300,7 +300,7 @@ module KDL
             traverse 1
           when ->(c : Char?) { SYMBOLS.has_key?(c) }
             return token(SYMBOLS[c], c.to_s).tap { traverse 1 }
-          when ->(c: Char?) { NEWLINES.includes?(c) }, '\r'
+          when ->(c : Char?) { NEWLINES.includes?(c) }, '\r'
             nl = expect_newline
             return token(Token::Type::NEWLINE, nl).tap { traverse nl.size }
           when '/'
@@ -325,7 +325,7 @@ module KDL
             self.context = Context::Whitespace
             @buffer = c.to_s
             traverse 1
-          when ->(c: Char?) { INITIAL_IDENTIFIER_CHARS === c.to_s }
+          when ->(c : Char?) { INITIAL_IDENTIFIER_CHARS === c.to_s }
             self.context = Context::Ident
             @buffer = c.to_s
             traverse 1
@@ -371,7 +371,7 @@ module KDL
             when "#inf"   then return token(Token::Type::FLOAT, Float64::INFINITY)
             when "#-inf"  then return token(Token::Type::FLOAT, -Float64::INFINITY)
             when "#nan"   then return token(Token::Type::FLOAT, Float64::NAN)
-            else raise_error "Unknown keyword #{@buffer}"
+            else               raise_error "Unknown keyword #{@buffer}"
             end
           end
         when Context::String
@@ -392,7 +392,7 @@ module KDL
             end
           when '"'
             return token(Token::Type::STRING, unescape(@buffer)).tap { traverse 1 }
-          when ->(c: Char?) { NEWLINES.includes?(c) }, '\r'
+          when ->(c : Char?) { NEWLINES.includes?(c) }, '\r'
             raise_error "Unexpected NEWLINE in string literal"
           when nil
             raise_error "Unterminated string literal"
@@ -430,7 +430,7 @@ module KDL
             if h == @rawstring_hashes
               return token(Token::Type::RAWSTRING, @buffer).tap { traverse 1 + h }
             end
-          when ->(c: Char?) { NEWLINES.includes? c }, '\r'
+          when ->(c : Char?) { NEWLINES.includes? c }, '\r'
             raise_error "Unexpected NEWLINE in rawstring literal"
           end
 
@@ -505,7 +505,7 @@ module KDL
             @comment_nesting -= 1
             traverse 2
             if @comment_nesting == 0
-              revert_context 
+              revert_context
             else
               @comment += "*/"
             end
@@ -564,7 +564,7 @@ module KDL
         case self[@index + i]
         when '\r'
           @column = 1
-        when -> (c: Char?) { NEWLINES.includes? c }
+        when ->(c : Char?) { NEWLINES.includes? c }
           @line += 1
           @column = 1
         else
@@ -581,8 +581,8 @@ module KDL
     private def raise_error(error)
       case error
       when String then raise Error.new(error, @line, @column)
-      when Error then raise error
-      else raise Error.new(error.message, @line, @column)
+      when Error  then raise error
+      else             raise Error.new(error.message, @line, @column)
       end
     end
 
@@ -607,7 +607,7 @@ module KDL
         Context::String,
         Context::Rawstring,
         Context::MultiLineComment,
-        Context::Whitespace
+        Context::Whitespace,
       ].includes? val
     end
 
@@ -625,7 +625,7 @@ module KDL
         else
           c.to_s
         end
-      when -> (c: Char?) { NEWLINES.includes? c }
+      when ->(c : Char?) { NEWLINES.includes? c }
         c.to_s
       else
         raise_error "Expected NEWLINE, found #{c}"
@@ -643,7 +643,7 @@ module KDL
     private def parse_decimal(s)
       return parse_float(s) if s =~ /[.E]/i
 
-      token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 10), { :format => "%d" })
+      token(Token::Type::INTEGER, Int64.new(munch_underscores(s), 10), {:format => "%d"})
     rescue e
       if INITIAL_IDENTIFIER_CHARS === s[0].to_s && s[1..-1].each_char.all? { |c| IDENTIFER_CHARS === c.to_s }
         token(Token::Type::IDENT, s)
@@ -669,7 +669,7 @@ module KDL
       if value.nil? || value.infinite? || value.nan? || (value.zero? && scientific)
         token(Token::Type::DECIMAL, BigDecimal.new(s))
       else
-        token(Token::Type::FLOAT, value, { :format => scientific ? "%.#{decimals}E" : nil }.compact)
+        token(Token::Type::FLOAT, value, {:format => scientific ? "%.#{decimals}E" : nil}.compact)
       end
     end
 
@@ -687,7 +687,7 @@ module KDL
 
     private def parse_octal(s)
       raise_error "Invalid octal value '#{s}'" unless /^[0-7][0-7_]*$/ =~ s
- 
+
       token(Token::Type::INTEGER, parse_int(munch_underscores(s), 8))
     end
 
@@ -711,7 +711,7 @@ module KDL
       string.gsub(/\\(\\|\s+)/) do |m|
         case m
         when "\\\\" then "\\\\"
-        else ""
+        else             ""
         end
       end
     end
@@ -739,16 +739,16 @@ module KDL
 
     private def replace_esc(m)
       case m
-      when "\\n"  then "\n"
-      when "\\r"  then "\r"
-      when "\\t"  then "\t"
-      when "\\\\" then "\\"
-      when "\\\"" then "\""
-      when "\\b"  then "\b"
-      when "\\f"  then "\f"
-      when "\\s"  then " "
+      when "\\n"                                     then "\n"
+      when "\\r"                                     then "\r"
+      when "\\t"                                     then "\t"
+      when "\\\\"                                    then "\\"
+      when "\\\""                                    then "\""
+      when "\\b"                                     then "\b"
+      when "\\f"                                     then "\f"
+      when "\\s"                                     then " "
       when /\\[#{WHITESPACE.join}#{NEWLINES.join}]+/ then ""
-      else raise_error "Unexpected escape #{m.inspect}"
+      else                                                raise_error "Unexpected escape #{m.inspect}"
       end
     end
 
@@ -769,8 +769,8 @@ module KDL
       lines.map do |line|
         case line
         when WS_STAR then ""
-        when valid then $1
-        else raise_error "Invalid multiline string indentation"
+        when valid   then $1
+        else              raise_error "Invalid multiline string indentation"
         end
       end.join("\n")
     end
