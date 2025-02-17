@@ -37,7 +37,7 @@ module KDL
     end
 
     # Bug: https://github.com/crystal-lang/crystal/issues/15484, separate overload needed for double splat
-    def node(name : String, *arguments, type : String? = nil, comment : String? = nil, **properties)
+    def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil, **properties : KDL::Value::Type)
       node name, type: type, comment: comment do
         arguments.each &->arg(KDL::Value::Type)
         properties.each &->prop(Symbol, KDL::Value::Type)
