@@ -52,7 +52,7 @@ describe KDL::Builder do
       KDL
     end
 
-    it "builds a node with a single argument" do
+    it "builds a node with a single shorthand argument" do
       doc = KDL.build do |kdl|
         kdl.node "snorlax" do
           kdl.node "size", 10_i64
@@ -69,7 +69,18 @@ describe KDL::Builder do
       KDL
     end
 
-    it "builds a node with multiple arguments and properties" do
+    it "builds a node with shorthand properties" do
+      doc = KDL.build do |kdl|
+        kdl.node "pokemon", pokemon_type: "normal", level: 10_i64
+      end
+
+      doc.to_s.should eq <<-KDL
+      pokemon pokemon_type=normal level=10
+
+      KDL
+    end
+
+    it "builds a node with multiple shorthand arguments and properties" do
       doc = KDL.build do |kdl|
         kdl.node "pokemon", "snorlax", "jigglypuff", pokemon_type: "normal", level: 10_i64
       end
