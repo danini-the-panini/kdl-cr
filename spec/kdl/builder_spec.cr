@@ -52,43 +52,76 @@ describe KDL::Builder do
       KDL
     end
 
-    it "builds a node with a single shorthand argument" do
-      doc = KDL.build do |kdl|
-        kdl.node "snorlax" do
-          kdl.node "size", 10_i64
-          kdl.node "state", "asleep"
+    describe "shorthand" do
+      it "builds a node with a single argument" do
+        doc = KDL.build do |kdl|
+          kdl.node "snorlax" do
+            kdl.node "size", 10_i64
+          end
         end
+
+        doc.to_s.should eq <<-KDL
+        snorlax {
+            size 10
+        }
+
+        KDL
       end
 
-      doc.to_s.should eq <<-KDL
-      snorlax {
-          size 10
-          state asleep
-      }
+      it "builds a node with shorthand properties" do
+        doc = KDL.build do |kdl|
+          kdl.node "pokemon", properties: {"pokemon_type" => "normal", "level" => 10_i64}
+        end
 
-      KDL
-    end
-
-    it "builds a node with shorthand properties" do
-      doc = KDL.build do |kdl|
-        kdl.node "pokemon", properties: {"pokemon_type" => "normal", "level" => 10_i64}
-      end
-
-      doc.to_s.should eq <<-KDL
+        doc.to_s.should eq <<-KDL
       pokemon pokemon_type=normal level=10
 
       KDL
-    end
-
-    it "builds a node with multiple shorthand arguments and properties" do
-      doc = KDL.build do |kdl|
-        kdl.node "pokemon", "snorlax", "jigglypuff", properties: {"Pokemon type" => "normal", "Level" => 10_i64}
       end
 
-      doc.to_s.should eq <<-KDL
-      pokemon snorlax jigglypuff "Pokemon type"=normal Level=10
+      it "builds a node with positional shorthand properties" do
+        doc = KDL.build do |kdl|
+          kdl.node "pokemon", {"Pokemon type" => "normal", "Level" => 10_i64}
+        end
 
-      KDL
+        doc.to_s.should eq <<-KDL
+        pokemon "Pokemon type"=normal Level=10
+
+        KDL
+      end
+
+      it "builds a node with positional properties and arguments" do
+        doc = KDL.build do |kdl|
+          kdl.node "pokemon", "snorlax", "jigglypuff", {"Pokemon type" => "normal", "Level" => 10_i64}
+        end
+
+        doc.to_s.should eq <<-KDL
+        pokemon snorlax jigglypuff "Pokemon type"=normal Level=10
+
+        KDL
+      end
+
+      it "builds a node with mixed order positional properties and arguments" do
+        doc = KDL.build do |kdl|
+          kdl.node "pokemon", "snorlax", {"Pokemon type" => "normal"}, "jigglypuff", {"Level" => 10_i64}
+        end
+
+        doc.to_s.should eq <<-KDL
+        pokemon snorlax jigglypuff "Pokemon type"=normal Level=10
+
+        KDL
+      end
+
+      it "builds a node with positional arguments, and named properties" do
+        doc = KDL.build do |kdl|
+          kdl.node "pokemon", "snorlax", "jigglypuff", properties: {"Trainer" => "Sylphrena"}
+        end
+
+        doc.to_s.should eq <<-KDL
+        pokemon snorlax jigglypuff Trainer=Sylphrena
+
+        KDL
+      end
     end
   end
 end

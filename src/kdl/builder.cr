@@ -35,21 +35,31 @@ module KDL
       node(name, type: type, comment: comment) { }
     end
 
-    # Name and shorthand arguments
-    def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil)
-      node name, type: type, comment: comment do
-        arguments.each &->arg(KDL::Value::Type)
+    # Name andshorthand positional arguments + properties
+    def node(name : String, *positional : KDL::Value::Type | Hash(String, KDL::Value::Type), type : String? = nil, comment : String? = nil)
+      node(name, type: type, comment: comment) do
+        positional.each do |argument|
+          case argument
+          in Hash
+            argument.each do |key, value|
+              raise ArgumentError.new "Invalid hash key or value" unless key.is_a? String && value.is_a? KDL::Value::Type
+              prop key, value
+            end
+          in KDL::Value::Type
+            arg argument
+          end
+        end
       end
     end
 
-    # Name and shorthand properties
+    # Name and shorthand named properties
     def node(name : String, *, type : String? = nil, comment : String? = nil, properties : Hash(String, KDL::Value::Type))
       node name, type: type, comment: comment do
         properties.each &->prop(String, KDL::Value::Type)
       end
     end
 
-    # Name and shorthand arguments + properties
+    # Name and shorthand positional arguments + named properties
     def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil, properties : Hash(String, KDL::Value::Type))
       node name, type: type, comment: comment do
         arguments.each &->arg(KDL::Value::Type)
