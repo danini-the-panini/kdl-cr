@@ -71,7 +71,7 @@ describe KDL::Builder do
 
     it "builds a node with shorthand properties" do
       doc = KDL.build do |kdl|
-        kdl.node "pokemon", pokemon_type: "normal", level: 10_i64
+        kdl.node "pokemon", properties: {"pokemon_type" => "normal", "level" => 10_i64}
       end
 
       doc.to_s.should eq <<-KDL
@@ -82,11 +82,11 @@ describe KDL::Builder do
 
     it "builds a node with multiple shorthand arguments and properties" do
       doc = KDL.build do |kdl|
-        kdl.node "pokemon", "snorlax", "jigglypuff", pokemon_type: "normal", level: 10_i64
+        kdl.node "pokemon", "snorlax", "jigglypuff", properties: {"Pokemon type" => "normal", "Level" => 10_i64}
       end
 
       doc.to_s.should eq <<-KDL
-      pokemon snorlax jigglypuff pokemon_type=normal level=10
+      pokemon snorlax jigglypuff "Pokemon type"=normal Level=10
 
       KDL
     end

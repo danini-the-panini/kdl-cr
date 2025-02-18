@@ -30,26 +30,30 @@ module KDL
       end
     end
 
+    # Node name only
     def node(name : String, *, type : String? = nil, comment : String? = nil)
       node(name, type: type, comment: comment) { }
     end
 
+    # Name and shorthand arguments
     def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil)
       node name, type: type, comment: comment do
         arguments.each &->arg(KDL::Value::Type)
       end
     end
 
-    def node(name : String, *, type : String? = nil, comment : String? = nil, **properties : KDL::Value::Type)
+    # Name and shorthand properties
+    def node(name : String, *, type : String? = nil, comment : String? = nil, properties : Hash(String, KDL::Value::Type))
       node name, type: type, comment: comment do
-        properties.each &->prop(Symbol, KDL::Value::Type)
+        properties.each &->prop(String, KDL::Value::Type)
       end
     end
 
-    def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil, **properties : KDL::Value::Type)
+    # Name and shorthand arguments + properties
+    def node(name : String, *arguments : KDL::Value::Type, type : String? = nil, comment : String? = nil, properties : Hash(String, KDL::Value::Type))
       node name, type: type, comment: comment do
         arguments.each &->arg(KDL::Value::Type)
-        properties.each &->prop(Symbol, KDL::Value::Type)
+        properties.each &->prop(String, KDL::Value::Type)
       end
     end
 
@@ -61,8 +65,7 @@ module KDL
       end
     end
 
-    def prop(key : String | Symbol, value : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
-      key = key.to_s
+    def prop(key : String, value : KDL::Value::Type, *, type : String? = nil, comment : String? = nil)
       if node = current_node
         node.properties[key] = KDL::Value.new(value, type: type, comment: comment)
       else
