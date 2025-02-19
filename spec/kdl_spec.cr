@@ -1,7 +1,6 @@
 require "./spec_helper"
 
 describe KDL do
-
   test_cases = "./spec/kdl-org/tests/test_cases"
   inputs = Dir["#{test_cases}/input/*"]
 
@@ -18,5 +17,4 @@ describe KDL do
       end
     end
   end
-
 end

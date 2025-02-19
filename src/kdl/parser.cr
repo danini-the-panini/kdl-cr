@@ -5,16 +5,16 @@ require "./value"
 
 module KDL
   class Parser
-    private getter comments
+    private getter parse_comments
     private getter first_comment : String?
-  
+
     class Error < Exception
       def initialize(message, line, column)
         super("#{message} (#{line}:#{column})")
       end
     end
 
-    def initialize(*, @comments = false)
+    def initialize(*, @parse_comments = true)
       @tokenizer = KDL::Tokenizer.new("")
       @depth = 0
       @first_comment = nil
@@ -93,7 +93,7 @@ module KDL
           lines << c
         end
       end
-      return nil unless @comments
+      return nil unless @parse_comments
 
       lines.empty? ? nil : lines.join("\n")
     end
@@ -108,8 +108,8 @@ module KDL
           lines = [] of String
         end
       end
-      return nil unless @comments
-      
+      return nil unless @parse_comments
+
       lines.empty? ? nil : lines.join("\n")
     end
 
@@ -123,7 +123,7 @@ module KDL
       loop do
         peek = @tokenizer.peek_token
         case peek.type
-        when -> (x: KDL::Token::Type) { commented }, KDL::Token::Type::WS
+        when ->(x : KDL::Token::Type) { commented }, KDL::Token::Type::WS
           comment = ws_star
           peek = @tokenizer.peek_token
           if !commented && peek.type == KDL::Token::Type::SLASHDASH
@@ -217,15 +217,14 @@ module KDL
     private def value_without_type(t)
       case t.type
       when KDL::Token::Type::IDENT,
-        KDL::Token::Type::STRING,
-        KDL::Token::Type::RAWSTRING,
-        KDL::Token::Type::INTEGER,
-        KDL::Token::Type::DECIMAL,
-        KDL::Token::Type::FLOAT,
-        KDL::Token::Type::TRUE,
-        KDL::Token::Type::FALSE,
-        KDL::Token::Type::NULL
-
+           KDL::Token::Type::STRING,
+           KDL::Token::Type::RAWSTRING,
+           KDL::Token::Type::INTEGER,
+           KDL::Token::Type::DECIMAL,
+           KDL::Token::Type::FLOAT,
+           KDL::Token::Type::TRUE,
+           KDL::Token::Type::FALSE,
+           KDL::Token::Type::NULL
         return KDL::Value.new(t.value, format: t.meta[:format]?)
       else
         raise_error "Expected value, got #{t.type}", t
@@ -244,8 +243,8 @@ module KDL
     end
 
     private def parse_document_comment
-      return nil unless @comments
-      
+      return nil unless @parse_comments
+
       lines = [] of String
       while linespace?(@tokenizer.peek_token)
         t = @tokenizer.next_token
@@ -312,8 +311,8 @@ module KDL
       end
       case error
       when String then raise Error.new(error, line, column)
-      when Error then raise error
-      else raise Error.new(error.message, line, column)
+      when Error  then raise error
+      else             raise Error.new(error.message, line, column)
       end
     end
   end

@@ -14,7 +14,7 @@ module KDL
       @properties = {} of String => KDL::Value,
       @children = [] of Node,
       @type : String? = nil,
-      @comment : String? = nil
+      @comment : String? = nil,
     )
     end
 
@@ -147,10 +147,10 @@ module KDL
 
     def ==(other : KDL::Node)
       name == other.name &&
-      arguments == other.arguments &&
-      properties == other.properties &&
-      children == other.children &&
-      type == other.type
+        arguments == other.arguments &&
+        properties == other.properties &&
+        children == other.children &&
+        type == other.type
     end
 
     def ==(other)
@@ -173,17 +173,17 @@ module KDL
       s += "#{indent}#{t.nil? ? "" : "(#{id_to_s t})"}#{id_to_s name}"
       unless arguments.empty?
         s += " #{arguments.map { |v|
-          vs = ""
-          vs += "/* #{c} */ " if c = v.comment
-          vs + v.to_s
-        }.join(" ")}"
+                   vs = ""
+                   vs += "/* #{c} */ " if c = v.comment
+                   vs + v.to_s
+                 }.join(" ")}"
       end
       unless properties.empty?
         s += " #{properties.map { |k, v|
-          vs = ""
-          vs += "/* #{c} */ " if c = v.comment
-          vs + "#{id_to_s k}=#{v}"
-        }.join(" ")}"
+                   vs = ""
+                   vs += "/* #{c} */ " if c = v.comment
+                   vs + "#{id_to_s k}=#{v}"
+                 }.join(" ")}"
       end
       unless children.empty?
         s += " {\n"
