@@ -9,7 +9,7 @@ describe KDL::Tokenizer do
       tokenizer.peek_token_after_next.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "node"))
       tokenizer.peek_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
-      tokenizer.peek_token_after_next.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 1_i64))
+      tokenizer.peek_token_after_next.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 1))
     end
   end
 
@@ -45,11 +45,11 @@ describe KDL::Tokenizer do
     end
 
     it "tokenizes integer" do
-      KDL::Tokenizer.new("123").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 123_i64))
+      KDL::Tokenizer.new("123").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 123))
       KDL::Tokenizer.new("0x0123456789abcdef").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0x0123456789abcdef))
       KDL::Tokenizer.new("0x0123456789ABCDEF").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0x0123456789ABCDEF))
-      KDL::Tokenizer.new("0o01234567").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0o01234567i64))
-      KDL::Tokenizer.new("0b010101").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0b010101i64))
+      KDL::Tokenizer.new("0o01234567").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0o01234567))
+      KDL::Tokenizer.new("0b010101").next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 0b010101))
     end
 
     it "tokenizes float" do
@@ -107,13 +107,13 @@ describe KDL::Tokenizer do
 
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "node"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 1_i64))
+      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 1))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::STRING, "two"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "a"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "="))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 3_i64))
+      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 3))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
     end
 
@@ -140,7 +140,7 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, "  "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "baz"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "="))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 2_i64))
+      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 2))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EOF, ""))
     end
 
@@ -194,7 +194,7 @@ describe KDL::Tokenizer do
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::SLASHDASH, "/-"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::IDENT, "key"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::EQUALS, "="))
-      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 1_i64))
+      tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::INTEGER, 1))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::WS, " "))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::SLASHDASH, "/-"))
       tokenizer.next_token.should eq(KDL::Token.new(KDL::Token::Type::LBRACE, "{"))
