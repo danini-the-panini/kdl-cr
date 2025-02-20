@@ -40,11 +40,13 @@ module KDL
         {% children_annos   = {} of Nil => Nil %}
         {% other_properties = {} of Nil => Nil %}
 
+        {% all_properties = {} of Nil => Nil %}
+
         {% for ivar in @type.instance_vars %}
           {% if ann = ivar.annotation(::KDL::Argument) %}
             {% unless ann[:ignore] || ann[:ignore_deserialize] %}
               {%
-                argument_annos << {
+                prop = {
                   id:          ivar.id,
                   has_default: ivar.has_default_value?,
                   default:     ivar.default_value,
@@ -53,6 +55,8 @@ module KDL
                   converter:   ann[:converter],
                   presence:    ann[:presence]
                 }
+                argument_annos << prop
+                all_properties[ivar.id] = prop
               %}
             {% end %}
           {% elsif ann = ivar.annotation(::KDL::Arguments) %}
@@ -67,6 +71,7 @@ module KDL
                   converter:   ann[:converter],
                   presence:    ann[:presence]
                 }
+                all_properties[ivar.id] = arguments_anno
               %}
             {% end %}
           {% elsif ann = ivar.annotation(::KDL::Property) %}
@@ -81,6 +86,7 @@ module KDL
                   converter:   ann[:converter],
                   presence:    ann[:presence]
                 }
+                all_properties[ivar.id] = property_annos[ivar.id]
               %}
             {% end %}
           {% elsif ann = ivar.annotation(::KDL::Properties) %}
@@ -95,6 +101,7 @@ module KDL
                   converter:   ann[:converter],
                   presence:    ann[:presence]
                 }
+                all_properties[ivar.id] = properties_anno
               %}
             {% end %}
           {% elsif ann = ivar.annotation(::KDL::Child) %}
@@ -110,6 +117,7 @@ module KDL
                   presence:    ann[:presence],
                   unwrap:      ann[:unwrap]
                 }
+                all_properties[ivar.id] = child_annos[ivar.id]
               %}
             {% end %}
           {% elsif ann = ivar.annotation(::KDL::Children) %}
@@ -124,6 +132,7 @@ module KDL
                   converter:   ann[:converter],
                   presence:    ann[:presence]
                 }
+                all_properties[ivar.id] = children_annos[ivar.id]
               %}
             {% end %}
           {% else %}
@@ -135,44 +144,66 @@ module KDL
                 nilable:     ivar.type.nilable?,
                 type:        ivar.type
               }
+              all_properties[ivar.id] = other_children[ivar.id]
             %}
           {% end %}
         {% end %}
 
         {% for value, index in argument_annos %}
-          %var{value[:id]} = node[{{index}}]
+          # argument
+          %var{value[:id]} = node[{{index}}].as({{ value[:type] }})
           %found{value[:id]} = true
         {% end %}
         {% if arguments_anno %}
-          %var{arguments_anno[:id]} = node.arguments[{{argument_annos.size}}..].map(&.value)
+          # arguments
+          %var{arguments_anno[:id]} = node.arguments[{{argument_annos.size}}..].map(&.value).as({{ arguments_anno[:type] }})
           %found{arguments_anno[:id]} = true
         {% end %}
-        found_props = [] of String
+        __found_props = [] of String
         {% for name, value in property_annos %}
-          %var{name} = node[{{name.stringify}}]
+          # property
+          %var{name} = node[{{name.stringify}}].as({{ value[:type] }})
           %found{name} = true
-          found_props << {{name.stringify}}
+          __found_props << {{name.stringify}}
         {% end %}
         {% if properties_anno %}
-          %var{properties_anno[:id]} = node.properties.reject(found_props)
+          # properties
+          %var{properties_anno[:id]} = node.properties.reject(__found_props).as({{ properties_anno[:type] }})
           %found{properties_anno[:id]} = true
         {% end %}
         {% for name, value in child_annos %}
+          # child
           {% if value[:unwrap] == "argument" %}
-            %var{name} = node.arg({{name.stringify}})
+            %var{name} = node.arg({{name.stringify}}).as({{ value[:type] }})
           {% elsif value[:unwrap] == "arguments" %}
-            %var{name} = node.args({{name.stringify}})
+            %var{name} = node.args({{name.stringify}}).as({{ value[:type] }})
           {% elsif value[:unwrap] == "properties" %}
-            %var{name} = node.child({{name.stringify}}).properties.transform_values { |v, _| v.value }
+            %var{name} = node.child({{name.stringify}}).properties.transform_values { |v, _| v.value }.as({{ value[:type] }})
           {% else %}
             %var{name} = {{value[:type]}}.from_kdl(node.child({{name.stringify}}))
           {% end %}
           %found{name} = true
         {% end %}
         {% for name, value in children_annos %}
-          %var{name} = node.children.select { |n| n.name == {{name.stringify}} }.map { |n| {{value[:type]}}.from_kdl(n) }
+          # children
+          %var{name} = node.children.select { |n| n.name == {{name.stringify}} }.map { |n| {{value[:type]}}.from_kdl(n) }.as({{ value[:type] }})
           %found{name} = true
         {% end %}
+
+        {% for name, value in all_properties %}
+          if %found{name}
+            @{{name}} = %var{name}
+          else
+            {% unless value[:has_default] || value[:nilable] %}
+              raise ::KDL::SerializableError.new("Missing KDL entry: {{value[:key].id}}", self.class.to_s)
+            {% end %}
+          end
+
+          {% if value[:presence] %}
+            @{{name}}_present = %found{name}
+          {% end %}
+        {% end %}
+        {% debug %}
       {% end %}
     end
   end
