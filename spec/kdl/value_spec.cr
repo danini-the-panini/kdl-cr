@@ -3,9 +3,9 @@ require "../spec_helper"
 describe KDL::Value do
   describe "#to_s" do
     it "returns stringified value" do
-      KDL::Value.new(1i64).to_s.should eq "1"
-      KDL::Value.new(1i64, type: "foo").to_s.should eq "(foo)1"
-      KDL::Value.new(1i64, type: "foo\"bar").to_s.should eq "(\"foo\\\"bar\")1"
+      KDL::Value.new(1).to_s.should eq "1"
+      KDL::Value.new(1, type: "foo").to_s.should eq "(foo)1"
+      KDL::Value.new(1, type: "foo\"bar").to_s.should eq "(\"foo\\\"bar\")1"
       KDL::Value.new(1.5).to_s.should eq "1.5"
       KDL::Value.new(BigDecimal.new("1.5e1000")).to_s.should eq "1.5E+1000"
       KDL::Value.new(BigDecimal.new("1.5e-1000")).to_s.should eq "1.5E-1000"

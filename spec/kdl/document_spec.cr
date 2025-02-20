@@ -137,11 +137,11 @@ describe KDL::Document do
 
   describe "#to_s" do
     doc = KDL::Document.new([
-      KDL::Node.new("b1", arguments: [KDL::Value.new("b"), KDL::Value.new(1i64, type: "foo")], children: [
-        KDL::Node.new("c1", arguments: [KDL::Value.new("c"), KDL::Value.new(1i64)]),
+      KDL::Node.new("b1", arguments: [KDL::Value.new("b"), KDL::Value.new(1, type: "foo")], children: [
+        KDL::Node.new("c1", arguments: [KDL::Value.new("c"), KDL::Value.new(1)]),
       ]),
-      KDL::Node.new("b2", arguments: [KDL::Value.new("b")], properties: {"c" => KDL::Value.new(2i64, type: "bar")}, children: [
-        KDL::Node.new("c2", arguments: [KDL::Value.new("c"), KDL::Value.new(2i64)]),
+      KDL::Node.new("b2", arguments: [KDL::Value.new("b")], properties: {"c" => KDL::Value.new(2, type: "bar")}, children: [
+        KDL::Node.new("c2", arguments: [KDL::Value.new("c"), KDL::Value.new(2)]),
       ]),
       KDL::Node.new("b3", children: [] of KDL::Node, type: "baz"),
     ])

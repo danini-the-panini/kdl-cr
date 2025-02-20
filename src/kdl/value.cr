@@ -2,7 +2,7 @@ require "big"
 
 module KDL
   class Value
-    alias Type = Nil | Bool | Int64 | Float64 | BigInt | BigDecimal | String
+    alias Type = Nil | Bool | Number::Primitive | BigInt | BigDecimal | String
 
     # Returns the raw underlying value.
     property value : Type
