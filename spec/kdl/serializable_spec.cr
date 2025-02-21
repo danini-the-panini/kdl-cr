@@ -50,20 +50,10 @@ class TestNode
   end
 end
 
-class TestDocument
-  include KDL::Serializable
-
-  @[KDL::Child]
-  property node : TestNode
-
-  def initialize(@node)
-  end
-end
-
 describe KDL::Serializable do
   it "serializes documents" do
     doc = KDL.parse <<-KDL
-    node "arg1" #true 1 22 33 foo="a" bardle="b" baz="c" qux="d" {
+    TestNode "arg1" #true 1 22 333 foo="a" bardle="b" baz="c" qux="d" {
       arg "arg2"
       args "x" "y" "z"
       props a="x" b="y" c="z"
@@ -74,22 +64,22 @@ describe KDL::Serializable do
     }
     KDL
 
-    obj = TestDocument.from_kdl(doc)
-    obj.node.first.should eq "arg1"
-    obj.node.second.should eq true
-    obj.node.numbers.should eq [1, 22, 333]
-    obj.node.foo.should eq "a"
-    obj.node.bar.should eq "b"
-    obj.node.map.should eq({ "baz": "c", "qux": "d" })
-    obj.node.arg.should eq "arg2"
-    obj.node.args.should eq ["x", "y", "z"]
-    obj.node.props.should eq({ "a": "x", "b": "y", "c": "z" })
-    obj.node.norf.value.should eq "wat"
-    obj.node.things.size.should eq 3
-    obj.node.things[0].value.should eq "foo"
-    obj.node.things[1].value.should eq "bar"
-    obj.node.things[2].value.should eq "baz"
+    obj = TestNode.from_kdl(doc.nodes[0])
+    obj.first.should eq "arg1"
+    obj.second.should eq true
+    obj.numbers.should eq [1, 22, 333]
+    obj.foo.should eq "a"
+    obj.bar.should eq "b"
+    obj.map.should eq({ "baz" => "c", "qux" => "d" })
+    obj.arg.should eq "arg2"
+    obj.args.should eq ["x", "y", "z"]
+    obj.props.should eq({ "a" => "x", "b" => "y", "c" => "z" })
+    obj.norf.value.should eq "wat"
+    obj.things.size.should eq 3
+    obj.things[0].value.should eq "foo"
+    obj.things[1].value.should eq "bar"
+    obj.things[2].value.should eq "baz"
 
-    obj.to_kdl.should eq doc
+    KDL::Document.new([obj.to_kdl]).should eq doc
   end
 end

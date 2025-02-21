@@ -18,6 +18,18 @@ module KDL
     )
     end
 
+    def initialize(
+      name : String,
+      *,
+      arguments = [] of KDL::Value,
+      properties = {} of String => KDL::Value,
+      children : Array(KDL::Node),
+      type : String? = nil,
+      comment : String? = nil,
+    )
+      initialize(name, arguments: arguments, properties: properties, children: KDL::Document.new(children), type: type, comment: comment)
+    end
+
     def [](index : Int) : Value::Type
       arguments[index].value
     end
