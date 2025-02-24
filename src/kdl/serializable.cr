@@ -156,14 +156,15 @@ module KDL
             {% unless ann[:ignore] || ann[:ignore_deserialize] %}
               {%
                 child_annos[ivar.id] = {
-                  name:        (ann[:name] || ivar).id.stringify,
-                  has_default: ivar.has_default_value?,
-                  default:     ivar.default_value,
-                  nilable:     ivar.type.nilable?,
-                  type:        ivar.type,
-                  converter:   ann[:converter],
-                  presence:    ann[:presence],
-                  unwrap:      ann[:unwrap]
+                  name:          (ann[:name] || ivar).id.stringify,
+                  has_default:   ivar.has_default_value?,
+                  default:       ivar.default_value,
+                  nilable:       ivar.type.nilable?,
+                  type:          ivar.type,
+                  converter:     ann[:converter],
+                  presence:      ann[:presence],
+                  unwrap:        ann[:unwrap],
+                  children_name: ann[:children_name] || "-"
                 }
                 all_properties[ivar.id] = child_annos[ivar.id]
               %}
@@ -185,14 +186,14 @@ module KDL
             {% end %}
           {% else %}
             {%
-              other_children[ivar.id] = {
+              other_properties[ivar.id] = {
                 key:         ivar.id.stringify,
                 has_default: ivar.has_default_value?,
                 default:     ivar.default_value,
                 nilable:     ivar.type.nilable?,
                 type:        ivar.type
               }
-              all_properties[ivar.id] = other_children[ivar.id]
+              all_properties[ivar.id] = other_properties[ivar.id]
             %}
           {% end %}
         {% end %}
@@ -222,13 +223,17 @@ module KDL
         {% for name, value in child_annos %}
           # child
           {% if value[:unwrap] == "argument" %}
-            %var{name} = convert(node.arg({{name.stringify}}), {{ value[:type] }})
+            %var{name} = convert(node.arg({{value[:name]}}), {{ value[:type] }})
           {% elsif value[:unwrap] == "arguments" %}
-            %var{name} = node.args({{name.stringify}}).map { |v| convert(v, {{ value[:type].type_vars[0] }}) }
+            %var{name} = node.args({{value[:name]}}).map { |v| convert(v, {{ value[:type].type_vars[0] }}) }
           {% elsif value[:unwrap] == "properties" %}
-            %var{name} = node.child({{name.stringify}}).properties.transform_values { |v, _| convert(v.value, {{ value[:type].type_vars[1] }}) }
+            %var{name} = node.child({{value[:name]}}).properties.transform_values { |v, _| convert(v.value, {{ value[:type].type_vars[1] }}) }
+          {% elsif value[:unwrap] == "children" %}
+            %var{name} = node.child({{value[:name]}}).children.select { |n| n.name == {{ value[:children_name] }} }.map { |n| {{value[:type].type_vars[0]}}.from_kdl(n) }
+          {% elsif value[:unwrap] == "dash_vals" %}
+            %var{name} = node.child({{value[:name]}}).dash_vals.map { |v| convert(v, {{ value[:type].type_vars[0] }}) }
           {% else %}
-            %var{name} = {{value[:type]}}.from_kdl(node.child({{name.stringify}}))
+            %var{name} = {{value[:type]}}.from_kdl(node.child({{value[:name]}}))
           {% end %}
           %found{name} = true
         {% end %}
@@ -282,6 +287,18 @@ module KDL
                 end
               {% elsif ann[:unwrap] == "properties" %}
                 builder.node({{(ann[:name] || ivar).id.stringify}}, @{{name}})
+              {% elsif ann[:unwrap] == "children" %}
+                builder.node({{(ann[:name] || ivar).id.stringify}}) do
+                  @{{name}}.each do |value|
+                    value.to_kdl({{ann[:children_name] || "-"}}, builder)
+                  end
+                end
+              {% elsif ann[:unwrap] == "dash_vals" %}
+                builder.node({{(ann[:name] || ivar).id.stringify}}) do
+                  @{{name}}.each do |value|
+                    builder.node("-", value)
+                  end
+                end
               {% else %}
                 @{{name}}.to_kdl({{(ann[:name] || ivar).id.stringify}}, builder)
               {% end %}
