@@ -183,7 +183,7 @@ module KDL
       @depth += 1
       children = parse_children
       @depth -= 1
-      node.children = children unless commented
+      node.children = KDL::Document.new(children) unless commented
     end
 
     private def parse_rbrace

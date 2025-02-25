@@ -26,8 +26,9 @@ module KDL
       if parent = current_node
         parent.children << node
       else
-        document.nodes << node
+        document << node
       end
+      node
     end
 
     # Node name only
@@ -64,7 +65,9 @@ module KDL
 
     def arg(value : Value::Type, *, type : String? = nil, comment : String? = nil)
       if node = current_node
-        node.arguments << Value.new(value, type: type, comment: comment)
+        val = Value.new(value, type: type, comment: comment)
+        node.arguments << val
+        val
       else
         raise Error.new "Can't do argument, not inside Node"
       end
@@ -73,7 +76,9 @@ module KDL
     def prop(key : String | Symbol, value : Value::Type, *, type : String? = nil, comment : String? = nil)
       key = key.to_s
       if node = current_node
-        node.properties[key] = Value.new(value, type: type, comment: comment)
+        val = Value.new(value, type: type, comment: comment)
+        node.properties[key] = val
+        val
       else
         raise Error.new "Can't do property, not inside Node"
       end
