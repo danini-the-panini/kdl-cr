@@ -56,6 +56,10 @@ module KDL
     end
   
     macro included
+      def self.from_kdl(doc)
+        new doc
+      end
+    
       def self.new(node : ::KDL::Node)
         new_from_kdl_node(node)
       end
@@ -311,15 +315,5 @@ module KDL
         end
       {% end %}
     end
-  end
-end
-
-def Object.from_kdl(doc)
-  new doc
-end
-
-def Array.from_kdl(node : ::KDL::Node)
-  node.arguments.map do |arg|
-    arg.value
   end
 end
