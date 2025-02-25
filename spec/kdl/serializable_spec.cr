@@ -37,6 +37,15 @@ class TestNode
   @[KDL::Child(unwrap: "properties")]
   property props : Hash(String, String)
 
+  @[KDL::Child(name: "feature", unwrap: "argument")]
+  property feature_name : String
+
+  @[KDL::Child(name: "feature", unwrap: "property", property_name: "enabled")]
+  property feature_enabled : Bool
+
+  @[KDL::Child(name: "feature", unwrap: "property", property_name: "option")]
+  property feature_option : UInt32
+
   @[KDL::Child(unwrap: "dash_vals")]
   property dashies : Array(String)
 
@@ -48,26 +57,32 @@ class TestNode
 
   @[KDL::Child(unwrap: "children")]
   property thangs : Array(TestChild)
+
+  @[KDL::Children(name: "path", unwrap: "argument")]
+  property paths : Array(String)
 end
 
 describe KDL::Serializable do
   it "serializes documents" do
     doc = KDL.parse <<-KDL
     TestNode "arg1" #true 1 22 333 foo="a" bardle="b" baz="c" qux="d" {
-      arg "arg2"
-      args "x" "y" "z"
-      props a="x" b="y" c="z"
+      norf wat
+      thing foo
+      thing bar
+      thing baz
+      path "some/path"
+      path "some/other/path"
+      arg arg2
+      args x y z
+      props a=x b=y c=z
+      feature florp enabled=#true option=42
       dashies {
-        - "Lorem"
-        - "Ipsum"
+        - Lorem
+        - Ipsum
       }
-      norf "wat"
-      thing "foo"
-      thing "bar"
-      thing "baz"
       thangs {
-        - "qux"
-        - "norf"
+        - qux
+        - norf
       }
     }
     KDL
@@ -82,6 +97,9 @@ describe KDL::Serializable do
     obj.arg.should eq "arg2"
     obj.args.should eq ["x", "y", "z"]
     obj.props.should eq({ "a" => "x", "b" => "y", "c" => "z" })
+    obj.feature_name.should eq("florp")
+    obj.feature_enabled.should eq(true)
+    obj.feature_option.should eq(42_u64)
     obj.dashies.should eq(["Lorem", "Ipsum"])
     obj.norf.value.should eq "wat"
     obj.things.size.should eq 3
@@ -91,6 +109,7 @@ describe KDL::Serializable do
     obj.thangs.size.should eq 2
     obj.thangs[0].value.should eq "qux"
     obj.thangs[1].value.should eq "norf"
+    obj.paths.should eq ["some/path", "some/other/path"]
 
     KDL::Document.new([obj.to_kdl]).should eq doc
   end

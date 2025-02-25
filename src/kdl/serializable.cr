@@ -168,7 +168,8 @@ module KDL
                   converter:     ann[:converter],
                   presence:      ann[:presence],
                   unwrap:        ann[:unwrap],
-                  children_name: ann[:children_name] || "-"
+                  children_name: ann[:children_name] || "-",
+                  property_name: ann[:property_name]
                 }
                 all_properties[ivar.id] = child_annos[ivar.id]
               %}
@@ -183,7 +184,8 @@ module KDL
                   nilable:     ivar.type.nilable?,
                   type:        ivar.type,
                   converter:   ann[:converter],
-                  presence:    ann[:presence]
+                  presence:    ann[:presence],
+                  unwrap:      ann[:unwrap]
                 }
                 all_properties[ivar.id] = children_annos[ivar.id]
               %}
@@ -232,6 +234,8 @@ module KDL
             %var{name} = node.args({{value[:name]}}).map { |v| convert(v, {{ value[:type].type_vars[0] }}) }
           {% elsif value[:unwrap] == "properties" %}
             %var{name} = node.child({{value[:name]}}).properties.transform_values { |v, _| convert(v.value, {{ value[:type].type_vars[1] }}) }
+          {% elsif value[:unwrap] == "property" %}
+            %var{name} = convert(node.child({{value[:name]}})[{{value[:property_name]}}], {{ value[:type] }})
           {% elsif value[:unwrap] == "children" %}
             %var{name} = node.child({{value[:name]}}).children.select { |n| n.name == {{ value[:children_name] }} }.map { |n| {{value[:type].type_vars[0]}}.from_kdl(n) }
           {% elsif value[:unwrap] == "dash_vals" %}
@@ -243,7 +247,12 @@ module KDL
         {% end %}
         {% for name, value in children_annos %}
           # children
-          %var{name} = node.children.select { |n| n.name == {{value[:name]}} }.map { |n| {{value[:type].type_vars[0]}}.from_kdl(n) }
+          %children{name} = node.children.select { |n| n.name == {{ value[:name] }} }
+          {% if value[:unwrap] == "argument" %}
+            %var{name} = %children{name}.map { |n| convert(n.arg, {{ value[:type].type_vars[0] }}) } 
+          {% else %}
+            %var{name} = %children{name}.map { |n| {{value[:type].type_vars[0]}}.from_kdl(n) }
+          {% end %}
           %found{name} = true
         {% end %}
 
@@ -265,6 +274,9 @@ module KDL
 
     def to_kdl(node_name : String = self.class.to_s, builder : ::KDL::Builder = ::KDL::Builder.new)
       {% begin %}
+        {% child_nodes = {} of Nil => Nil %}
+        {% child_annotations = [] of Nil %}
+
         builder.node(node_name) do
           {% for ivar in @type.instance_vars %}
             {% name = ivar.id %}
@@ -281,36 +293,66 @@ module KDL
                 builder.prop(key, value)
               end
             {% elsif ann = ivar.annotation(::KDL::Child) %}
-              {% if ann[:unwrap] == "argument" %}
-                builder.node({{(ann[:name] || ivar).id.stringify}}, @{{name}})
-              {% elsif ann[:unwrap] == "arguments" %}
-                builder.node({{(ann[:name] || ivar).id.stringify}}) do
-                  @{{name}}.each do |arg|
-                    builder.arg(arg)
-                  end
-                end
-              {% elsif ann[:unwrap] == "properties" %}
-                builder.node({{(ann[:name] || ivar).id.stringify}}, @{{name}})
-              {% elsif ann[:unwrap] == "children" %}
-                builder.node({{(ann[:name] || ivar).id.stringify}}) do
-                  @{{name}}.each do |value|
-                    value.to_kdl({{ann[:children_name] || "-"}}, builder)
-                  end
-                end
-              {% elsif ann[:unwrap] == "dash_vals" %}
-                builder.node({{(ann[:name] || ivar).id.stringify}}) do
-                  @{{name}}.each do |value|
-                    builder.node("-", value)
-                  end
-                end
-              {% else %}
+              {% if ann[:unwrap].nil? %}
                 @{{name}}.to_kdl({{(ann[:name] || ivar).id.stringify}}, builder)
+              {% else %}
+                {%
+                  child_nodes[(ann[:name] || ivar).id.stringify] = true
+                  child_annotations.push({
+                    id:            ivar.id,
+                    name:          (ann[:name] || ivar).id.stringify,
+                    has_default:   ivar.has_default_value?,
+                    default:       ivar.default_value,
+                    nilable:       ivar.type.nilable?,
+                    type:          ivar.type,
+                    converter:     ann[:converter],
+                    presence:      ann[:presence],
+                    unwrap:        ann[:unwrap],
+                    children_name: ann[:children_name] || "-",
+                    property_name: ann[:property_name]
+                  })
+                 %}
               {% end %}
             {% elsif ann = ivar.annotation(::KDL::Children) %}
-              @{{name}}.each do |value|
-                value.to_kdl({{(ann[:name] || ivar).id.stringify}}, builder)
-              end
+              {% if ann[:unwrap] == "argument" %}
+                @{{name}}.each do |value|
+                  builder.node({{(ann[:name] || ivar).id.stringify}}, value)
+                end
+              {% else %}
+                @{{name}}.each do |value|
+                  value.to_kdl({{(ann[:name] || ivar).id.stringify}}, builder)
+                end
+              {% end %}
             {% end %}
+          {% end %}
+
+          {% for name in child_nodes %}
+            {% values = child_annotations.select { |ann| ann[:name] == name } %}
+            builder.node({{name}}) do
+              {% for value in values %}
+                {% if value[:unwrap] == "argument" %}
+                  builder.arg(@{{value[:id]}})
+                {% elsif value[:unwrap] == "arguments" %}
+                  @{{value[:id]}}.each do |arg|
+                    builder.arg(arg)
+                  end
+                {% elsif value[:unwrap] == "properties" %}
+                  @{{value[:id]}}.each do |key, val|
+                    builder.prop(key, val)
+                  end
+                {% elsif value[:unwrap] == "property" %}
+                  builder.prop({{value[:property_name]}}, @{{value[:id]}})
+                {% elsif value[:unwrap] == "children" %}
+                  @{{value[:id]}}.each do |child|
+                    child.to_kdl({{ann[:children_name] || "-"}}, builder)
+                  end
+                {% elsif value[:unwrap] == "dash_vals" %}
+                  @{{value[:id]}}.each do |val|
+                    builder.node("-", val)
+                  end
+                {% end %}
+              {% end %}
+            end
           {% end %}
         end
       {% end %}
