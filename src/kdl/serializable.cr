@@ -1,4 +1,7 @@
 module KDL
+  class SerializableException < Exception
+  end
+
   annotation Argument; end
   annotation Arguments; end
   annotation Property; end
@@ -55,12 +58,12 @@ module KDL
         {{expr}}.as({{type}})
       {% end %}
     end
-  
+
     macro included
       def self.from_kdl(doc)
         new doc
       end
-    
+
       def self.new(node : ::KDL::Node)
         new_from_kdl_node(node)
       end
@@ -85,12 +88,12 @@ module KDL
 
     def initialize(*, __node_for_kdl_serializable node : ::KDL::Node)
       {% begin %}
-        {% argument_annos   = [] of Nil %}
-        {% arguments_anno   = nil %}
-        {% property_annos   = {} of Nil => Nil %}
-        {% properties_anno  = nil %}
-        {% child_annos      = {} of Nil => Nil %}
-        {% children_annos   = {} of Nil => Nil %}
+        {% argument_annos = [] of Nil %}
+        {% arguments_anno = nil %}
+        {% property_annos = {} of Nil => Nil %}
+        {% properties_anno = nil %}
+        {% child_annos = {} of Nil => Nil %}
+        {% children_annos = {} of Nil => Nil %}
         {% other_properties = {} of Nil => Nil %}
 
         {% all_properties = {} of Nil => Nil %}
@@ -106,7 +109,7 @@ module KDL
                   nilable:     ivar.type.nilable?,
                   type:        ivar.type,
                   converter:   ann[:converter],
-                  presence:    ann[:presence]
+                  presence:    ann[:presence],
                 }
                 argument_annos << prop
                 all_properties[ivar.id] = prop
@@ -122,7 +125,7 @@ module KDL
                   nilable:     ivar.type.nilable?,
                   type:        ivar.type,
                   converter:   ann[:converter],
-                  presence:    ann[:presence]
+                  presence:    ann[:presence],
                 }
                 all_properties[ivar.id] = arguments_anno
               %}
@@ -137,7 +140,7 @@ module KDL
                   nilable:     ivar.type.nilable?,
                   type:        ivar.type,
                   converter:   ann[:converter],
-                  presence:    ann[:presence]
+                  presence:    ann[:presence],
                 }
                 all_properties[ivar.id] = property_annos[ivar.id]
               %}
@@ -152,7 +155,7 @@ module KDL
                   nilable:     ivar.type.nilable?,
                   type:        ivar.type,
                   converter:   ann[:converter],
-                  presence:    ann[:presence]
+                  presence:    ann[:presence],
                 }
                 all_properties[ivar.id] = properties_anno
               %}
@@ -170,7 +173,7 @@ module KDL
                   presence:      ann[:presence],
                   unwrap:        ann[:unwrap],
                   children_name: ann[:children_name] || "-",
-                  property_name: ann[:property_name]
+                  property_name: ann[:property_name],
                 }
                 all_properties[ivar.id] = child_annos[ivar.id]
               %}
@@ -186,7 +189,7 @@ module KDL
                   type:        ivar.type,
                   converter:   ann[:converter],
                   presence:    ann[:presence],
-                  unwrap:      ann[:unwrap]
+                  unwrap:      ann[:unwrap],
                 }
                 all_properties[ivar.id] = children_annos[ivar.id]
               %}
@@ -198,7 +201,7 @@ module KDL
                 has_default: ivar.has_default_value?,
                 default:     ivar.default_value,
                 nilable:     ivar.type.nilable?,
-                type:        ivar.type
+                type:        ivar.type,
               }
               all_properties[ivar.id] = other_properties[ivar.id]
             %}
@@ -230,7 +233,18 @@ module KDL
         {% for name, value in child_annos %}
           # child
           {% if value[:unwrap] == "argument" %}
-            %var{name} = convert(node.arg({{value[:name]}}), {{ value[:type] }})
+           %argument = node.arg?({{value[:name]}})
+            %var{name} = if %argument
+                           convert(%argument, {{ value[:type] }})
+                        else
+                          {% if value[:has_default] %}
+                            {{value[:default]}}
+                          {% elsif value[:nilable] %}
+                            nil
+                          {% else %}
+                            raise SerializableException.new("Missing argument for KDL node: {{name}}")
+                          {% end %}
+                        end
           {% elsif value[:unwrap] == "arguments" %}
             %var{name} = node.args({{value[:name]}}).map { |v| convert(v, {{ value[:type].type_vars[0] }}) }
           {% elsif value[:unwrap] == "properties" %}
@@ -242,7 +256,18 @@ module KDL
           {% elsif value[:unwrap] == "dash_vals" %}
             %var{name} = node.child({{value[:name]}}).dash_vals.map { |v| convert(v, {{ value[:type].type_vars[0] }}) }
           {% else %}
-            %var{name} = {{value[:type]}}.from_kdl(node.child({{value[:name]}}))
+            %child = node.child?({{value[:name]}})
+            %var{name} = if %child
+                          {{value[:type]}}.from_kdl(%child)
+                        else
+                          {% if value[:has_default] %}
+                            {{value[:default]}}
+                          {% elsif value[:nilable] %}
+                            nil
+                          {% else %}
+                            raise SerializableException.new("Missing argument for KDL node: {{name}}")
+                          {% end %}
+                        end
           {% end %}
           %found{name} = true
         {% end %}
@@ -250,7 +275,7 @@ module KDL
           # children
           %children{name} = node.children.select { |n| n.name == {{ value[:name] }} }
           {% if value[:unwrap] == "argument" %}
-            %var{name} = %children{name}.map { |n| convert(n.arg, {{ value[:type].type_vars[0] }}) } 
+            %var{name} = %children{name}.map { |n| convert(n.arg, {{ value[:type].type_vars[0] }}) }
           {% else %}
             %var{name} = %children{name}.map { |n| {{value[:type].type_vars[0]}}.from_kdl(n) }
           {% end %}
@@ -310,9 +335,9 @@ module KDL
                     presence:      ann[:presence],
                     unwrap:        ann[:unwrap],
                     children_name: ann[:children_name] || "-",
-                    property_name: ann[:property_name]
+                    property_name: ann[:property_name],
                   })
-                 %}
+                %}
               {% end %}
             {% elsif ann = ivar.annotation(::KDL::Children) %}
               {% if ann[:unwrap] == "argument" %}

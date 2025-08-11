@@ -1,4 +1,5 @@
 require "./kdl/*"
+require "./from_kdl.cr"
 
 module KDL
   VERSION = "0.2.0"

@@ -1,0 +1,20 @@
+TestNode "arg1" #true 1 22 333 foo="a" bardle="b" baz="c" qux="d" {
+  norf wat
+  thing foo
+  thing bar
+  thing baz
+  path "some/path"
+  path "some/other/path"
+  arg arg2
+  args x y z
+  props a=x b=y c=z
+  feature florp enabled=#true option=42
+  dashies {
+    - Lorem
+    - Ipsum
+  }
+  thangs {
+    - qux
+    - norf
+  }
+}
