@@ -82,7 +82,7 @@ module KDL
     WS_PLUS = /\A#{WS}+\z/
 
     NEWLINES         = ['\u000A', '\u0085', '\u000B', '\u000C', '\u2028', '\u2029']
-    NEWLINES_PATTERN = /(#{NEWLINES.map { |c| Regex.escape(c) }.join('|')}|\r\n?)/
+    NEWLINES_PATTERN = /(#{NEWLINES.map { |c| Regex.escape(c.to_s) }.join('|')}|\r\n?)/
 
     OTHER_NON_IDENTIFIER_CHARS = ('\u0000'..'\u0020').to_a - WHITESPACE
 
